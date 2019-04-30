@@ -7,6 +7,7 @@ import time
 import json
 import copy
 import random
+from datetime import datetime
 
 
 BASE_URL_PATTERN = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
@@ -62,7 +63,8 @@ class Monitor:
                 data = self.get_data()
                 cars = self.get_cars(data)
                 places = self.get_places_count(cars)
-                print('Total: {} places'.format(places))
+                t = datetime.now().strftime('%H:%M:%S')
+                print('{}\tTotal: {} tickets'.format(t, places))
                 if places >= self.requested_count:
                     self.create_sound()
             except Exception:
