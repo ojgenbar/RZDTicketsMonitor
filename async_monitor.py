@@ -3,7 +3,7 @@ import datetime
 import logging
 import random
 import traceback
-from pprint import pprint
+from pprint import pformat, pprint
 
 import aiohttp
 
@@ -12,9 +12,13 @@ BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
 logging.basicConfig(level=logging.INFO)
 
 
+class RZDNegativeResponse(RuntimeError):
+    pass
+
+
 class AsyncMonitor:
     def __init__(self, args, requested_count=1, cars_type="Плац", *,
-                 delay_base=10, callback=None):
+                 delay_base=10, callback=None, prefix=''):
         self.args = args
         self.requested_count = requested_count
         self.cars_type = cars_type
@@ -26,13 +30,18 @@ class AsyncMonitor:
         }
         self.session = None
         self.stop = False
+        self.last_message = None
+        self.log_prefix = prefix
 
     @staticmethod
     async def default_callback(string):
         logging.info(string)
 
     def get_cars(self, data):
-        cars = data["lst"][0]["cars"]
+        data = data["lst"][0]
+        if data['result'] != 'OK':
+            raise RZDNegativeResponse(data['error'])
+        cars = data["cars"]
         filtered_cars = [c for c in cars if c['type'] == self.cars_type]
         return filtered_cars
 
@@ -47,6 +56,8 @@ class AsyncMonitor:
                 url, data=result_json, headers=self.headers
         ) as resp:
             result_json = await resp.json(content_type=None)
+            logging.info(pformat(result_json).replace('\n', '\\n'))
+
         return result_json
 
     async def get_data(self):
@@ -69,9 +80,12 @@ class AsyncMonitor:
                     places = self.get_places_count(cars)
                     t = datetime.datetime.now().strftime('%H:%M:%S')
                     msg = f'{t}\tTotal: {places} tickets'
-                    logging.info(msg)
+                    self.last_message = msg
+                    logging.info(f'{self.log_prefix}{msg}')
                     if places >= self.requested_count:
                         await self.callback(msg)
+                except RZDNegativeResponse:
+                    raise
                 except Exception:
                     logging.warning(traceback.format_exc())
                 finally:

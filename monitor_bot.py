@@ -1,3 +1,5 @@
+import asyncio
+import datetime
 import json
 import logging
 import os
@@ -9,7 +11,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from async_monitor import AsyncMonitor
+import config
+import async_monitor
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,21 +37,27 @@ class Form(StatesGroup):
 
 
 messengers = {}
-HELP_STRING = (
-        'Hi!\n'
-        'Wanna buy ticket to train but there are no available? Try this!\n'
-        'This is RZD Tickets monitor. Send us data about a train and we will '
-        'watch if some tickets appear!\n'
-        'Type /start to start\n'
-        'Type /cancel to cancel monitor\n'
-        'Type /help to show this help\n'
-    )
 
 
 @dp.message_handler(commands='help')
 async def cmd_help(message: types.Message):
-    msg = HELP_STRING
-    await message.reply(msg)
+    msg = config.HELP_STRING
+    await message.reply(msg, reply_markup=DEFAULT_MARKUP)
+
+
+@dp.message_handler(state='*', commands='status')
+async def cmd_status(message: types.Message, state: FSMContext):
+    if state.user in messengers and not messengers[state.user].stop:
+        messanger = messengers[state.user]
+        msg = (
+            "Status: RZD Monitor is active.\n"
+            "Params:\n"
+            f"{dump_to_json(messanger.args)}\n"
+            f"Last attempt: {messanger.last_message}"
+        )
+    else:
+        msg = "Status: RZD Monitor is down."
+    await message.reply(msg, reply_markup=DEFAULT_MARKUP)
 
 
 @dp.message_handler(state='*', commands='start')
@@ -56,11 +65,23 @@ async def cmd_start(message: types.Message, state: FSMContext):
     """
     Conversation's entry point
     """
+    if state.user in messengers and not messengers[state.user].stop:
+        msg = 'Another monitor is ran. Cancel it first: /cancel'
+        await message.reply(msg, reply_markup=DEFAULT_MARKUP)
+        return
+
     # Set state
     await Form.departure.set()
-    msg = HELP_STRING
+    msg = config.HELP_STRING
     await bot.send_message(state.user, msg)
-    await message.reply('What is departure station ID (e.g. "2010290")?')
+    msg = (
+        'What is departure station ID (e.g. "2010290")?\n\n'
+        'Some suggestions:\n'
+        'ЧЕРЕПОВЕЦ 1: 2010290\n'
+        'МОСКВА (ВСЕ ВОКЗАЛЫ): 2000000\n'
+        'САНКТ-ПЕТЕРБУРГ (ВСЕ ВОКЗАЛЫ): 2004000\n'
+    )
+    await message.reply(msg, reply_markup=DIRECTIONS_MARKUP)
 
 
 # You can use state '*' if you need to handle all states
@@ -72,6 +93,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     """
     current_state = await state.get_state()
     if current_state is None:
+        await message.reply('Nothing to cancel.', reply_markup=DEFAULT_MARKUP)
         return
 
     logging.info('Cancelling state %r', current_state)
@@ -79,46 +101,61 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         messenger = messengers.pop(state.user, None)
         if messenger:
             messenger.stop = True
+            await asyncio.sleep(1)
             await messenger.run()
 
     await state.finish()
-    await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
+    await message.reply('Cancelled.', reply_markup=DEFAULT_MARKUP)
 
 
 @dp.message_handler(state=Form.departure)
 async def process_departure(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['departure'] = message.text
+        data['departure'] = prepare_text_input(message.text)
 
     await Form.next()
-    await message.reply('What is destination station ID (e.g. "2004000")?')
+    msg = 'What is destination station ID (e.g. "2004000")?'
+    await message.reply(msg, reply_markup=DIRECTIONS_MARKUP)
 
 
 @dp.message_handler(state=Form.destination)
 async def process_destination(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['destination'] = message.text
+        data['destination'] = prepare_text_input(message.text)
 
     await Form.next()
-    await message.reply('What is train number (e.g. "617Я")?')
+    msg = (
+        'What is train number (e.g. "617Я")?\n\n'
+        'Some suggestions:\n'
+        'ВОЛОГДА -- САНКТ-ПЕТЕРБУРГ: 617Я\n'
+        'САНКТ-ПЕТЕРБУРГ -- ВОЛОГДА: 618Я\n'
+        'МОСКВА -- ЧЕРЕПОВЕЦ: 126Я\n'
+        'ЧЕРЕПОВЕЦ -- МОСКВА: 126Ч\n'
+    )
+    markup = build_suggest_train_markup(data)
+    await message.reply(msg, reply_markup=markup)
 
 
 @dp.message_handler(state=Form.train)
 async def process_train(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['train'] = message.text
+        data['train'] = prepare_text_input(message.text)
 
     await Form.next()
-    await message.reply('What is desired date? Follow this pattern: 05.05.2019.')
+    days = nearest_days_string()
+    text = f'What is desired date? Follow this pattern: {days[0]}'
+    markup = build_markup_from_list(days)
+    await message.reply(text, reply_markup=markup)
 
 
 @dp.message_handler(state=Form.date)
 async def process_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['date'] = message.text
+        data['date'] = prepare_text_input(message.text)
 
     await Form.next()
-    await message.reply('What car type would you like? Choose one of: [\'Плац\', \'Люкс\', \'Купе\']')
+    markup = build_markup_from_list(config.SUGGEST_TYPES)
+    await message.reply('What car type would you like?', reply_markup=markup)
 
 
 @dp.message_handler(state=Form.car_type)
@@ -126,22 +163,23 @@ async def process_car_type(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['car_type'] = message.text
 
+    markup = build_markup_from_list(config.SUGGEST_COUNT)
     await Form.next()
-    await message.reply('Quantity of tickets?')
+    await message.reply('Quantity of tickets?', reply_markup=markup)
 
 
 @dp.message_handler(state=Form.count)
 async def process_count(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['count'] = message.text
+
+    await message.reply('Starting...', reply_markup=DEFAULT_MARKUP)
     await start(message, state)
 
 
 async def start(message, state):
     async def send_message(msg):
         await bot.send_message(message.chat.id, msg)
-
-    await send_message('Starting...')
 
     async with state.proxy() as data:
         try:
@@ -159,18 +197,30 @@ async def start(message, state):
             traceback.print_exc()
             return
 
-    mon = AsyncMonitor(
+    prefix = f'@{message.from_user.username} {message.from_user.id} '
+
+    mon = async_monitor.AsyncMonitor(
         rzd_args,
         count,
         car_type,
-        delay_base=-5,
-        callback=send_message
+        delay_base=10,
+        callback=send_message,
+        prefix=prefix
     )
     messengers[state.user] = mon
 
-    await send_message(dump_to_json(rzd_args))
-    await send_message(f'Count: {count}, car type: {car_type}')
-    await mon.run()
+    msg = f'{dump_to_json(rzd_args)}\nCount: {count}, car type: {car_type}'
+    logging.info(f'{prefix}{msg}')
+    await send_message(msg)
+    try:
+        await mon.run()
+    except async_monitor.RZDNegativeResponse as e:
+        msg = (
+            f'Failed to start Monitor:\n'
+            f'RZD response message: "{str(e)}"'
+        )
+        await send_message(msg)
+        messengers.pop(state.user, None)
 
 
 @dp.message_handler()
@@ -181,6 +231,40 @@ async def unexpected_text(message: types.Message):
 
 def dump_to_json(data):
     return json.dumps(data, indent=4, ensure_ascii=False)
+
+
+def prepare_text_input(text):
+    if text[0] == '/':
+        text = text[1:]
+    return text
+
+
+def nearest_days_string(length=3):
+    date = datetime.datetime.now().date()
+
+    res = []
+    for i in range(length):
+        date = date + datetime.timedelta(days=1)
+        res.append(date.strftime('%d.%m.%Y'))
+    return res
+
+
+def build_markup_from_list(lst):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(*lst)
+    return markup
+
+
+def build_suggest_train_markup(data):
+    departure = data['departure']
+    destination = data['destination']
+    trains = config.SUGGEST_TRAINS.get((departure, destination), [])
+    return build_markup_from_list(trains) if trains else EMPTY_MARKUP
+
+
+DEFAULT_MARKUP = build_markup_from_list(config.DEFAULT_MARKUP_BUTTONS)
+DIRECTIONS_MARKUP = build_markup_from_list(config.SUGGEST_DIRECTIONS)
+EMPTY_MARKUP = types.ReplyKeyboardRemove()
 
 
 if __name__ == '__main__':
