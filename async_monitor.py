@@ -7,9 +7,10 @@ from pprint import pformat, pprint
 
 import aiohttp
 
-BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
+import config
 
-logging.basicConfig(level=logging.INFO)
+
+BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
 
 
 class RZDNegativeResponse(RuntimeError):
@@ -60,15 +61,20 @@ class AsyncMonitor:
 
         return result_json
 
-    async def get_data(self):
+    async def get_data(self, rid=None):
         args = {**self.args}
-        rid_data = await self.make_request(args)
-        rid = str(rid_data['RID'])
+        if not rid:
+            rid_data = await self.make_request(args)
+            rid = str(rid_data['RID'])
+
         args['rid'] = rid
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(config.SLEEP_AFTER_RID_REQUEST)
 
         data = await self.make_request(args)
+        if data["result"] == 'RID':
+            logging.warning(f'Unexpected RID result. Data: f{data}')
+            data = await self.get_data(rid=str(data['RID']))
         return data
 
     async def run(self):

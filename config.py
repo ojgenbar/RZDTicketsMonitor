@@ -1,3 +1,8 @@
+import logging
+import logging.handlers
+
+SLEEP_AFTER_RID_REQUEST = 1
+
 HELP_STRING = (
         'Hi!\n'
         'Wanna buy ticket to train but there are no available? Try this!\n'
@@ -26,8 +31,22 @@ for key in SUGGEST_TRAINS.keys():
     SUGGEST_DIRECTIONS.update(key)
 SUGGEST_DIRECTIONS = sorted(SUGGEST_DIRECTIONS)
 
+DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
+
+
+LOG_FILENAME = 'logs/rzd_monitor.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
+    handlers=[
+        logging.handlers.RotatingFileHandler(
+            LOG_FILENAME, 'a', maxBytes=20*2**20, backupCount=5
+        ),
+        logging.StreamHandler()
+    ])
+
+
 __all__ = [
     'HELP_STRING', 'SUGGEST_COUNT', 'SUGGEST_DIRECTIONS', 'SUGGEST_TRAINS',
     'SUGGEST_TYPES'
 ]
-DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']

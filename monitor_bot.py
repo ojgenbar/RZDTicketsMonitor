@@ -14,8 +14,6 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 import config
 import async_monitor
 
-logging.basicConfig(level=logging.INFO)
-
 
 API_TOKEN = os.getenv('RZD_TICKETS_MONITOR_BOT_TOKEN')
 PROXY_URL = os.getenv('RZD_TICKETS_MONITOR_BOT_PROXY')
