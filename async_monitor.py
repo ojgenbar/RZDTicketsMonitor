@@ -61,11 +61,10 @@ class AsyncMonitor:
 
         return result_json
 
-    async def get_data(self, rid=None):
+    async def get_data(self):
         args = {**self.args}
-        if not rid:
-            rid_data = await self.make_request(args)
-            rid = str(rid_data['RID'])
+        rid_data = await self.make_request(args)
+        rid = str(rid_data['RID'])
 
         args['rid'] = rid
 
@@ -74,7 +73,8 @@ class AsyncMonitor:
         data = await self.make_request(args)
         if data["result"] == 'RID':
             logging.warning(f'Unexpected RID result. Data: f{data}')
-            data = await self.get_data(rid=str(data['RID']))
+            data = await self.get_data()
+            await asyncio.sleep(2)
         return data
 
     async def run(self):
