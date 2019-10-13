@@ -5,15 +5,16 @@ import logging
 import os
 import traceback
 
+import aiogram.utils.markdown as md
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import ParseMode
 
-import config
 import async_monitor
-
+import config
 
 API_TOKEN = os.getenv('RZD_TICKETS_MONITOR_BOT_TOKEN')
 PROXY_URL = os.getenv('RZD_TICKETS_MONITOR_BOT_PROXY')
@@ -47,15 +48,31 @@ async def cmd_help(message: types.Message):
 async def cmd_status(message: types.Message, state: FSMContext):
     if state.user in messengers and not messengers[state.user].stop:
         messanger = messengers[state.user]
-        msg = (
-            "Status: RZD Monitor is active.\n"
-            "Params:\n"
-            f"{dump_to_json(messanger.args)}\n"
-            f"Last attempt: {messanger.last_message}"
+        seconds = (datetime.datetime.now() - messanger.last_time).total_seconds()
+        last_message = md.text(
+            f'Last attempt:',
+            md.bold(f'{seconds:.1f}'),
+            f'seconds ago. {messanger.last_message}'
+        )
+        msg = md.text(
+            md.text("Status: RZD Monitor is", md.bold("active"), "."),
+            md.text("Params:"),
+            md.code(f"{dump_to_json(messanger.args)}"),
+            last_message,
+            sep='\n'
         )
     else:
-        msg = "Status: RZD Monitor is down."
-    await message.reply(msg, reply_markup=DEFAULT_MARKUP)
+        msg = md.text(
+            md.text("Status: RZD Monitor is "),
+            md.bold("down"),
+            md.bold("."),
+            sep=''
+        )
+    await message.reply(
+        msg,
+        reply_markup=DEFAULT_MARKUP,
+        parse_mode=ParseMode.MARKDOWN
+    )
 
 
 @dp.message_handler(state='*', commands='start')
@@ -176,8 +193,8 @@ async def process_count(message: types.Message, state: FSMContext):
 
 
 async def start(message, state):
-    async def send_message(msg):
-        await bot.send_message(message.chat.id, msg)
+    async def send_message(msg, **kwargs):
+        await bot.send_message(message.chat.id, msg, **kwargs)
 
     async with state.proxy() as data:
         try:
@@ -207,9 +224,13 @@ async def start(message, state):
     )
     messengers[state.user] = mon
 
-    msg = f'{dump_to_json(rzd_args)}\nCount: {count}, car type: {car_type}'
+    msg = md.text(
+        md.code(f'{dump_to_json(rzd_args)}'),
+        md.text(f'Count: {count}, car type: {car_type}'),
+        sep='\n'
+    )
     logging.info(f'{prefix}{msg}')
-    await send_message(msg)
+    await send_message(msg, parse_mode=ParseMode.MARKDOWN)
     try:
         await mon.run()
     except async_monitor.RZDNegativeResponse as e:

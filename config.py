@@ -40,7 +40,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
     handlers=[
         logging.handlers.RotatingFileHandler(
-            LOG_FILENAME, 'a', maxBytes=20*2**20, backupCount=5
+            LOG_FILENAME, 'a', encoding='utf8', maxBytes=100*2**20, backupCount=5
         ),
         logging.StreamHandler()
     ])
