@@ -1,0 +1,4 @@
+help - Show help
+start - Start new Monitor
+cancel - Cancel current state
+status - Show current status

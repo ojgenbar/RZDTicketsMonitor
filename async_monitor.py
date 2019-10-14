@@ -19,7 +19,7 @@ class RZDNegativeResponse(RuntimeError):
 
 class AsyncMonitor:
     def __init__(self, args, requested_count=1, cars_type="Плац", *,
-                 delay_base=10, callback=None, prefix=''):
+                 delay_base=config.BASIC_DELAY_BASE, callback=None, prefix=''):
         self.args = args
         self.requested_count = requested_count
         self.cars_type = cars_type
@@ -32,6 +32,7 @@ class AsyncMonitor:
         self.session = None
         self.stop = False
         self.last_message = None
+        self.last_time = None
         self.log_prefix = prefix
 
     @staticmethod
@@ -84,9 +85,9 @@ class AsyncMonitor:
                     data = await self.get_data()
                     cars = self.get_cars(data)
                     places = self.get_places_count(cars)
-                    t = datetime.datetime.now().strftime('%H:%M:%S')
-                    msg = f'{t}\tTotal: {places} tickets'
+                    msg = f'Total: {places} tickets'
                     self.last_message = msg
+                    self.last_time = datetime.datetime.now()
                     logging.info(f'{self.log_prefix}{msg}')
                     if places >= self.requested_count:
                         await self.callback(msg)
