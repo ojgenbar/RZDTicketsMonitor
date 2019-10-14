@@ -1,5 +1,6 @@
 import os
 import logging.handlers
+import gzip
 
 SLEEP_AFTER_RID_REQUEST = 1
 BASIC_DELAY_BASE = 20
@@ -38,13 +39,31 @@ DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
 LOG_FILENAME = 'logs/rzd_monitor.log'
 os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
 
+
+def namer(name):
+    return name + ".gz"
+
+
+def rotator(source, dest):
+    with open(source, "rb") as sf:
+        data = sf.read()
+        compressed = gzip.compress(data)
+        with open(dest, "wb") as df:
+            df.write(compressed)
+    os.remove(source)
+
+
+rh = logging.handlers.RotatingFileHandler(
+    LOG_FILENAME, 'a', encoding='utf8', maxBytes=100 * 2 ** 20,
+    backupCount=10
+)
+rh.rotator = rotator
+rh.namer = namer
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
     handlers=[
-        logging.handlers.RotatingFileHandler(
-            LOG_FILENAME, 'a', encoding='utf8', maxBytes=100*2**20, backupCount=5
-        ),
+        rh,
         logging.StreamHandler()
     ])
 

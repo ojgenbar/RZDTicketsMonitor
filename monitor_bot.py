@@ -55,12 +55,17 @@ async def cmd_help(message: types.Message):
 async def cmd_status(message: types.Message, state: FSMContext):
     if state.user in messengers and not messengers[state.user].stop:
         messanger = messengers[state.user]
-        seconds = (datetime.datetime.now() - messanger.last_time).total_seconds()
-        last_message = md.text(
-            f'Last attempt:',
-            md.bold(f'{seconds:.1f}'),
-            f'seconds ago. {messanger.last_message}'
-        )
+        if messanger.last_time:
+            seconds = (
+                datetime.datetime.now() - messanger.last_time
+            ).total_seconds()
+            last_message = md.text(
+                f'Last attempt:',
+                md.bold(f'{seconds:.1f}'),
+                f'seconds ago. {messanger.last_message}'
+            )
+        else:
+            last_message = ''
         msg = md.text(
             md.text("Status: RZD Monitor is", md.bold("active"), "."),
             md.text("Params:"),
