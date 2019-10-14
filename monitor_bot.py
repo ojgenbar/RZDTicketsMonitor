@@ -19,6 +19,13 @@ import config
 API_TOKEN = os.getenv('RZD_TICKETS_MONITOR_BOT_TOKEN')
 PROXY_URL = os.getenv('RZD_TICKETS_MONITOR_BOT_PROXY')
 
+if not API_TOKEN:
+    msg = (
+        'You must specify bot token '
+        'in env variable "RZD_TICKETS_MONITOR_BOT_TOKEN"!'
+    )
+    raise RuntimeError(msg)
+
 bot = Bot(token=API_TOKEN, proxy=PROXY_URL)
 
 storage = MemoryStorage()
@@ -263,8 +270,8 @@ def nearest_days_string(length=3):
 
     res = []
     for i in range(length):
-        date = date + datetime.timedelta(days=1)
-        res.append(date.strftime('%d.%m.%Y'))
+        date_str = (date + datetime.timedelta(days=i)).strftime('%d.%m.%Y')
+        res.append(date_str)
     return res
 
 

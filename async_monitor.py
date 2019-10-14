@@ -19,7 +19,7 @@ class RZDNegativeResponse(RuntimeError):
 
 class AsyncMonitor:
     def __init__(self, args, requested_count=1, cars_type="Плац", *,
-                 delay_base=10, callback=None, prefix=''):
+                 delay_base=config.BASIC_DELAY_BASE, callback=None, prefix=''):
         self.args = args
         self.requested_count = requested_count
         self.cars_type = cars_type

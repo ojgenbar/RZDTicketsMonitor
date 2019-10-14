@@ -1,7 +1,8 @@
-import logging
+import os
 import logging.handlers
 
 SLEEP_AFTER_RID_REQUEST = 1
+BASIC_DELAY_BASE = 20
 
 HELP_STRING = (
         'Hi!\n'
@@ -35,6 +36,8 @@ DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
 
 
 LOG_FILENAME = 'logs/rzd_monitor.log'
+os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
