@@ -69,10 +69,23 @@ logging.basicConfig(
     handlers=[
         rh,
         logging.StreamHandler()
-    ])
+    ]
+)
 
+API_TOKEN_ENV = 'RZD_TICKETS_MONITOR_BOT_TOKEN'
+PROXY_URL_ENV = 'RZD_TICKETS_MONITOR_BOT_PROXY'
+API_TOKEN = os.getenv(API_TOKEN_ENV)
+PROXY_URL = os.getenv(PROXY_URL_ENV)
 
 __all__ = [
-    'HELP_STRING', 'SUGGEST_COUNT', 'SUGGEST_DIRECTIONS', 'SUGGEST_TRAINS',
-    'SUGGEST_TYPES'
+    'API_TOKEN',
+    'API_TOKEN_ENV',
+    'HELP_STRING',
+    'PROXY_URL',
+    'PROXY_URL_ENV',
+    'SUGGEST_COUNT',
+    'SUGGEST_DIRECTIONS',
+    'SUGGEST_TRAINS',
+    'SUGGEST_TYPES',
 ]
+
