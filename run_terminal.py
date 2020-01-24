@@ -1,7 +1,7 @@
 import asyncio
 from pprint import pprint
 
-from bot_app.monitor import AsyncMonitor
+from common.monitor import AsyncMonitor
 
 
 def main():
@@ -58,3 +58,7 @@ def main():
 
     mon = AsyncMonitor(rzd_args, args.count, args.car_type, delay_base=-5)
     asyncio.run(mon.run())
+
+
+if __name__ == '__main__':
+    main()

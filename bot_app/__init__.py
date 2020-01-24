@@ -2,8 +2,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from bot_app import config
-from bot_app import monitor
-
 
 if not config.API_TOKEN:
     msg = 'You must specify bot token ' 'in env variable "{}"!'.format(

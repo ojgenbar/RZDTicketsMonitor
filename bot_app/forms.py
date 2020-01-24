@@ -1,11 +1,11 @@
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.dispatcher.filters import state
 
 
-class MonitorParameters(StatesGroup):
-    departure = State()
-    destination = State()
-    train = State()
-    date = State()
-    car_type = State()
-    count = State()
-    ran = State()
+class MonitorParameters(state.StatesGroup):
+    departure = state.State()
+    destination = state.State()
+    train = state.State()
+    date = state.State()
+    car_type = state.State()
+    count = state.State()
+    ran = state.State()

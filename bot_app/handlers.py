@@ -5,16 +5,16 @@ import traceback
 
 import aiogram.utils.markdown as md
 from aiogram import types
-from aiogram.dispatcher import FSMContext
+from aiogram import dispatcher
 from aiogram.types import ParseMode
 
-from bot_app import bot
+import bot_app
 from bot_app import config
 from bot_app import forms
 from bot_app import helpers
 from bot_app import markups
 from bot_app import messengers
-from bot_app import monitor
+from common import monitor
 
 
 async def cmd_help(message: types.Message):
@@ -22,7 +22,7 @@ async def cmd_help(message: types.Message):
     await message.reply(msg, reply_markup=markups.DEFAULT_MARKUP)
 
 
-async def cmd_status(message: types.Message, state: FSMContext):
+async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
     if state.user in messengers and not messengers[state.user].stop:
         messanger = messengers[state.user]
         if messanger.last_time:
@@ -57,7 +57,7 @@ async def cmd_status(message: types.Message, state: FSMContext):
     )
 
 
-async def cmd_start(message: types.Message, state: FSMContext):
+async def cmd_start(message: types.Message, state: dispatcher.FSMContext):
     """
     Conversation's entry point
     """
@@ -69,7 +69,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
     # Set state
     await forms.MonitorParameters.departure.set()
     msg = config.HELP_STRING
-    await bot.send_message(state.user, msg)
+    await bot_app.bot.send_message(state.user, msg)
     msg = (
         'What is departure station ID (e.g. "2010290")?\n\n'
         'Some suggestions:\n'
@@ -80,7 +80,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
     await message.reply(msg, reply_markup=markups.DIRECTIONS_MARKUP)
 
 
-async def cancel_handler(message: types.Message, state: FSMContext):
+async def cancel_handler(message: types.Message, state: dispatcher.FSMContext):
     """
     Allow user to cancel any action
     """
@@ -103,7 +103,9 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply('Cancelled.', reply_markup=markups.DEFAULT_MARKUP)
 
 
-async def process_departure(message: types.Message, state: FSMContext):
+async def process_departure(
+        message: types.Message, state: dispatcher.FSMContext,
+):
     async with state.proxy() as data:
         data['departure'] = helpers.prepare_text_input(message.text)
 
@@ -112,7 +114,9 @@ async def process_departure(message: types.Message, state: FSMContext):
     await message.reply(msg, reply_markup=markups.DIRECTIONS_MARKUP)
 
 
-async def process_destination(message: types.Message, state: FSMContext):
+async def process_destination(
+        message: types.Message, state: dispatcher.FSMContext,
+):
     async with state.proxy() as data:
         data['destination'] = helpers.prepare_text_input(message.text)
 
@@ -129,7 +133,7 @@ async def process_destination(message: types.Message, state: FSMContext):
     await message.reply(msg, reply_markup=markup)
 
 
-async def process_train(message: types.Message, state: FSMContext):
+async def process_train(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         data['train'] = helpers.prepare_text_input(message.text)
 
@@ -140,7 +144,7 @@ async def process_train(message: types.Message, state: FSMContext):
     await message.reply(text, reply_markup=markup)
 
 
-async def process_date(message: types.Message, state: FSMContext):
+async def process_date(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         data['date'] = helpers.prepare_text_input(message.text)
 
@@ -149,7 +153,9 @@ async def process_date(message: types.Message, state: FSMContext):
     await message.reply('What car type would you like?', reply_markup=markup)
 
 
-async def process_car_type(message: types.Message, state: FSMContext):
+async def process_car_type(
+        message: types.Message, state: dispatcher.FSMContext,
+):
     async with state.proxy() as data:
         data['car_type'] = message.text
 
@@ -158,7 +164,7 @@ async def process_car_type(message: types.Message, state: FSMContext):
     await message.reply('Quantity of tickets?', reply_markup=markup)
 
 
-async def process_count(message: types.Message, state: FSMContext):
+async def process_count(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         data['count'] = message.text
 
@@ -168,7 +174,7 @@ async def process_count(message: types.Message, state: FSMContext):
 
 async def start(message, state):
     async def send_message(msg, **kwargs):
-        await bot.send_message(message.chat.id, msg, **kwargs)
+        await bot_app.bot.send_message(message.chat.id, msg, **kwargs)
 
     async with state.proxy() as data:
         try:

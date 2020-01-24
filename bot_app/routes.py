@@ -1,20 +1,23 @@
-from bot_app import dp
+import bot_app
 from bot_app import forms
 from bot_app import handlers
 
+_register = bot_app.dp.register_message_handler
+
 # Main
-dp.register_message_handler(handlers.cmd_help, state='*', commands=['help'])
-dp.register_message_handler(handlers.cmd_status, state='*', commands=['status'])
-dp.register_message_handler(handlers.cmd_start, state='*', commands=['start'])
-dp.register_message_handler(handlers.cancel_handler, state='*', commands=['cancel'])
+_register(handlers.cmd_help, state='*', commands=['help'])
+_register(handlers.cmd_status, state='*', commands=['status'])
+_register(handlers.cmd_start, state='*', commands=['start'])
+_register(handlers.cancel_handler, state='*', commands=['cancel'])
 
 # State dependant
-dp.register_message_handler(handlers.process_departure, state=forms.MonitorParameters.departure)
-dp.register_message_handler(handlers.process_destination, state=forms.MonitorParameters.destination)
-dp.register_message_handler(handlers.process_train, state=forms.MonitorParameters.train)
-dp.register_message_handler(handlers.process_date, state=forms.MonitorParameters.date)
-dp.register_message_handler(handlers.process_car_type, state=forms.MonitorParameters.car_type)
-dp.register_message_handler(handlers.process_count, state=forms.MonitorParameters.count)
+_parameters = forms.MonitorParameters
+_register(handlers.process_departure, state=_parameters.departure)
+_register(handlers.process_destination, state=_parameters.destination)
+_register(handlers.process_train, state=_parameters.train)
+_register(handlers.process_date, state=_parameters.date)
+_register(handlers.process_car_type, state=_parameters.car_type)
+_register(handlers.process_count, state=_parameters.count)
 
 # Fails
-dp.register_message_handler(handlers.unexpected_text, state='*')
+_register(handlers.unexpected_text, state='*')
