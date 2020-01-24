@@ -1,6 +1,6 @@
-import os
-import logging.handlers
 import gzip
+import logging.handlers
+import os
 
 SLEEP_AFTER_RID_REQUEST = 1
 SLEEP_AFTER_UNSUCCESSFUL_REQUEST = 3
@@ -10,14 +10,14 @@ MIN_SUGGESTS_SIMILARITY = 70
 SUGGESTS_LIMIT = 5
 
 HELP_STRING = (
-        'Hi!\n'
-        'Wanna buy ticket to train but there are no available? Try this!\n'
-        'This is RZD Tickets monitor. Send us data about a train and we will '
-        'watch if some tickets appear!\n'
-        'Type /start to start\n'
-        'Type /cancel to cancel monitor\n'
-        'Type /help to show this help\n'
-    )
+    'Hi!\n'
+    'Wanna buy ticket to train but there are no available? Try this!\n'
+    'This is RZD Tickets monitor. Send us data about a train and we will '
+    'watch if some tickets appear!\n'
+    'Type /start to start\n'
+    'Type /cancel to cancel monitor\n'
+    'Type /help to show this help\n'
+)
 
 SUGGEST_TRAINS = {
     ('2010290', '2000000'): ['126Ч'],
@@ -28,7 +28,7 @@ SUGGEST_TRAINS = {
     ('2000000', '2004000'): ['030А'],
 }
 
-SUGGEST_TYPES = ["Плац", "Купе", "Люкс"]
+SUGGEST_TYPES = ['Плац', 'Купе', 'Люкс']
 
 SUGGEST_COUNT = [str(i) for i in range(1, 4)]
 
@@ -45,31 +45,27 @@ os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
 
 
 def namer(name):
-    return name + ".gz"
+    return name + '.gz'
 
 
 def rotator(source, dest):
-    with open(source, "rb") as sf:
+    with open(source, 'rb') as sf:
         data = sf.read()
         compressed = gzip.compress(data)
-        with open(dest, "wb") as df:
+        with open(dest, 'wb') as df:
             df.write(compressed)
     os.remove(source)
 
 
 rh = logging.handlers.RotatingFileHandler(
-    LOG_FILENAME, 'a', encoding='utf8', maxBytes=100 * 2 ** 20,
-    backupCount=10
+    LOG_FILENAME, 'a', encoding='utf8', maxBytes=100 * 2 ** 20, backupCount=10,
 )
 rh.rotator = rotator
 rh.namer = namer
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
-    handlers=[
-        rh,
-        logging.StreamHandler()
-    ]
+    format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
+    handlers=[rh, logging.StreamHandler()],
 )
 
 API_TOKEN_ENV = 'RZD_TICKETS_MONITOR_BOT_TOKEN'
@@ -88,4 +84,3 @@ __all__ = [
     'SUGGEST_TRAINS',
     'SUGGEST_TYPES',
 ]
-

@@ -6,16 +6,15 @@ import traceback
 import aiogram.utils.markdown as md
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text
 from aiogram.types import ParseMode
 
 from bot_app import bot
 from bot_app import config
+from bot_app import forms
+from bot_app import helpers
+from bot_app import markups
 from bot_app import messengers
 from bot_app import monitor
-from bot_app import forms
-from bot_app import markups
-from bot_app import helpers
 
 
 async def cmd_help(message: types.Message):
@@ -33,28 +32,28 @@ async def cmd_status(message: types.Message, state: FSMContext):
             last_message = md.text(
                 f'Last attempt:',
                 md.bold(f'{seconds:.1f}'),
-                f'seconds ago. {messanger.last_message}'
+                f'seconds ago. {messanger.last_message}',
             )
         else:
             last_message = ''
         msg = md.text(
-            md.text("Status: RZD Monitor is", md.bold("active"), "."),
-            md.text("Params:"),
-            md.code(f"{helpers.dump_to_json(messanger.args)}"),
+            md.text('Status: RZD Monitor is', md.bold('active'), '.'),
+            md.text('Params:'),
+            md.code(f'{helpers.dump_to_json(messanger.args)}'),
             last_message,
-            sep='\n'
+            sep='\n',
         )
     else:
         msg = md.text(
-            md.text("Status: RZD Monitor is "),
-            md.bold("down"),
-            md.bold("."),
-            sep=''
+            md.text('Status: RZD Monitor is '),
+            md.bold('down'),
+            md.bold('.'),
+            sep='',
         )
     await message.reply(
         msg,
         reply_markup=markups.DEFAULT_MARKUP,
-        parse_mode=ParseMode.MARKDOWN
+        parse_mode=ParseMode.MARKDOWN,
     )
 
 
@@ -68,7 +67,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         return
 
     # Set state
-    await forms.Form.departure.set()
+    await forms.MonitorParameters.departure.set()
     msg = config.HELP_STRING
     await bot.send_message(state.user, msg)
     msg = (
@@ -87,7 +86,9 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     """
     current_state = await state.get_state()
     if current_state is None:
-        await message.reply('Nothing to cancel.', reply_markup=markups.DEFAULT_MARKUP)
+        await message.reply(
+            'Nothing to cancel.', reply_markup=markups.DEFAULT_MARKUP,
+        )
         return
 
     logging.info('Cancelling state %r', current_state)
@@ -106,7 +107,7 @@ async def process_departure(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['departure'] = helpers.prepare_text_input(message.text)
 
-    await forms.Form.next()
+    await forms.MonitorParameters.next()
     msg = 'What is destination station ID (e.g. "2004000")?'
     await message.reply(msg, reply_markup=markups.DIRECTIONS_MARKUP)
 
@@ -115,7 +116,7 @@ async def process_destination(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['destination'] = helpers.prepare_text_input(message.text)
 
-    await forms.Form.next()
+    await forms.MonitorParameters.next()
     msg = (
         'What is train number (e.g. "617Я")?\n\n'
         'Some suggestions:\n'
@@ -132,7 +133,7 @@ async def process_train(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['train'] = helpers.prepare_text_input(message.text)
 
-    await forms.Form.next()
+    await forms.MonitorParameters.next()
     days = helpers.nearest_days_string()
     text = f'What is desired date? Follow this pattern: {days[0]}'
     markup = markups.build_markup_from_list(days)
@@ -143,7 +144,7 @@ async def process_date(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['date'] = helpers.prepare_text_input(message.text)
 
-    await forms.Form.next()
+    await forms.MonitorParameters.next()
     markup = markups.build_markup_from_list(config.SUGGEST_TYPES)
     await message.reply('What car type would you like?', reply_markup=markup)
 
@@ -153,7 +154,7 @@ async def process_car_type(message: types.Message, state: FSMContext):
         data['car_type'] = message.text
 
     markup = markups.build_markup_from_list(config.SUGGEST_COUNT)
-    await forms.Form.next()
+    await forms.MonitorParameters.next()
     await message.reply('Quantity of tickets?', reply_markup=markup)
 
 
@@ -193,24 +194,21 @@ async def start(message, state):
         car_type,
         delay_base=10,
         callback=send_message,
-        prefix=prefix
+        prefix=prefix,
     )
     messengers[state.user] = mon
 
     msg = md.text(
         md.code(f'{helpers.dump_to_json(rzd_args)}'),
         md.text(f'Count: {count}, car type: {car_type}'),
-        sep='\n'
+        sep='\n',
     )
     logging.info(f'{prefix}{msg}')
     await send_message(msg, parse_mode=ParseMode.MARKDOWN)
     try:
         await mon.run()
     except monitor.RZDNegativeResponse as e:
-        msg = (
-            f'Failed to start Monitor:\n'
-            f'RZD response message: "{str(e)}"'
-        )
+        msg = f'Failed to start Monitor:\n' f'RZD response message: "{str(e)}"'
         await send_message(msg)
         messengers.pop(state.user, None)
 

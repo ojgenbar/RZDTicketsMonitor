@@ -1,15 +1,15 @@
 import asyncio
 import datetime
+import json
 import logging
 import random
 import traceback
 from pprint import pformat
-import json
-import aiohttp
 
-from bot_app import config
+import aiohttp
 from fuzzywuzzy import process
 
+from bot_app import config
 
 BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
 SUGGESTS_BASE_URL = r'http://www.rzd.ru/suggester'
@@ -20,8 +20,16 @@ class RZDNegativeResponse(RuntimeError):
 
 
 class AsyncMonitor:
-    def __init__(self, args, requested_count=1, cars_type="Плац", *,
-                 delay_base=config.BASIC_DELAY_BASE, callback=None, prefix=''):
+    def __init__(
+            self,
+            args,
+            requested_count=1,
+            cars_type='Плац',
+            *,
+            delay_base=config.BASIC_DELAY_BASE,
+            callback=None,
+            prefix='',
+    ):
         self.args = args
         self.requested_count = requested_count
         self.cars_type = cars_type
@@ -29,7 +37,7 @@ class AsyncMonitor:
         self.callback = callback or self.default_callback
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         }
         self.session = None
         self.stop = False
@@ -42,22 +50,22 @@ class AsyncMonitor:
         logging.info(string)
 
     def get_cars(self, data):
-        data = data["lst"][0]
+        data = data['lst'][0]
         if data['result'] != 'OK':
             raise RZDNegativeResponse(data['error'])
-        cars = data["cars"]
+        cars = data['cars']
         filtered_cars = [c for c in cars if c['type'] == self.cars_type]
         return filtered_cars
 
     @staticmethod
     def get_places_count(cars):
-        return sum(c["seats"][0]["free"] for c in cars)
+        return sum(c['seats'][0]['free'] for c in cars)
 
     async def make_request(self, result_json):
         url = BASE_URL
 
         async with self.session.post(
-                url, data=result_json, headers=self.headers
+                url, data=result_json, headers=self.headers,
         ) as resp:
             result_json = await resp.json(content_type=None)
             logging.info(pformat(result_json).replace('\n', '\\n'))
@@ -74,7 +82,7 @@ class AsyncMonitor:
         await asyncio.sleep(config.SLEEP_AFTER_RID_REQUEST)
 
         data = await self.make_request(args)
-        if data["result"] == 'RID':
+        if data['result'] == 'RID':
             logging.warning(f'Unexpected RID result. Data: f{data}')
             data = await self.get_data()
             await asyncio.sleep(2)
@@ -114,18 +122,12 @@ async def fetch_station_suggests(string):
 
 # @functools.lru_cache(None)
 async def _fetch_station_suggests_raw(string):
-    params = {
-        "stationNamePart": string,
-        "lang": "ru",
-    }
+    params = {'stationNamePart': string, 'lang': 'ru'}
     async with aiohttp.ClientSession() as session:
-        response = await session.get(
-            SUGGESTS_BASE_URL,
-            params=params,
-        )
+        response = await session.get(SUGGESTS_BASE_URL, params=params)
         logging.info(
-            f"Suggest request for: {string}, status={response.status}, "
-            f"url={response.url}"
+            f'Suggest request for: {string}, status={response.status}, '
+            f'url={response.url}',
         )
         data = await response.json()
         assert response.status == 200
@@ -134,9 +136,11 @@ async def _fetch_station_suggests_raw(string):
         suggests_dict = {}
         for doc in data:
             suggests_dict[doc['n']] = doc['c']
-        logging.info("Suggest data: {}".format(
-            json.dumps(suggests_dict, ensure_ascii=False)
-        ))
+        logging.info(
+            'Suggest data: {}'.format(
+                json.dumps(suggests_dict, ensure_ascii=False),
+            ),
+        )
         return suggests_dict
 
 
@@ -151,7 +155,7 @@ async def suggest_station(string):
             sleep = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1)
             logging.warning(
                 f'Cannot fetch suggests. Current attempt is {i+1}. '
-                f'Sleep: {sleep:.1f} sec.'
+                f'Sleep: {sleep:.1f} sec.',
             )
             await asyncio.sleep(sleep)
 
@@ -165,11 +169,9 @@ async def suggest_station(string):
 
     corpus = suggests_dict.keys()
     result = process.extract(string, corpus, limit=config.SUGGESTS_LIMIT)
-    logging.info(f"filtered similarity request result: {repr(result)}")
+    logging.info(f'filtered similarity request result: {repr(result)}')
     filtered_result = [
-        n[0]
-        for n in result
-        if n[1] > config.MIN_SUGGESTS_SIMILARITY
+        n[0] for n in result if n[1] > config.MIN_SUGGESTS_SIMILARITY
     ]
     filtered_suggests = {k: suggests_dict[k] for k in filtered_result}
     return filtered_suggests

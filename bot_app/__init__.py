@@ -6,9 +6,8 @@ from bot_app import monitor
 
 
 if not config.API_TOKEN:
-    msg = (
-        'You must specify bot token '
-        'in env variable "{}"!'.format(config.API_TOKEN_ENV)
+    msg = 'You must specify bot token ' 'in env variable "{}"!'.format(
+        config.API_TOKEN_ENV,
     )
     raise RuntimeError(msg)
 

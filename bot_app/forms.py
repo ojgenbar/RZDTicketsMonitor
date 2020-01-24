@@ -1,7 +1,7 @@
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 
-class Form(StatesGroup):
+class MonitorParameters(StatesGroup):
     departure = State()
     destination = State()
     train = State()
