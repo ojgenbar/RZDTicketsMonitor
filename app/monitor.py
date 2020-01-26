@@ -57,7 +57,7 @@ class AsyncMonitor:
 
     async def get_data(self):
         data = await rzd_rid_request(
-            self.session, config.BASE_URL, self.args, headers=self.headers
+            self.session, config.BASE_URL, self.args, headers=self.headers,
         )
         return data
 
@@ -89,23 +89,15 @@ class AsyncMonitor:
 async def rzd_request(session, url, args, *, headers=None):
     if not headers:
         headers = config.HEADERS
-    log_extra = {
-        'args_': args,
-        'url': url
-    }
+    log_extra = {'args_': args, 'url': url}
     logging.info('request: {!r}'.format(log_extra))
-    async with session.post(
-            url, data=args, headers=headers,
-    ) as resp:
+    async with session.post(url, data=args, headers=headers) as resp:
         result_json = await resp.json(content_type=None)
         logging.info(helpers.prepare_to_log(pformat(result_json)))
     return result_json
 
 
-async def rzd_rid_request(
-        session, url, args, *,
-        headers=None
-):
+async def rzd_rid_request(session, url, args, *, headers=None):
     args_copy = args.copy()
     rid_data = await rzd_request(session, url, args_copy, headers=headers)
     if rid_data['result'] == 'OK':
@@ -122,9 +114,7 @@ async def rzd_rid_request(
         data = await rzd_request(session, url, args_copy, headers=headers)
         result = data['result']
         if result == 'RID':
-            logging.warning(
-                f'Unexpected RID result. Data: {repr(data)}'
-            )
+            logging.warning(f'Unexpected RID result. Data: {repr(data)}')
             await asyncio.sleep(rid_sleep)
         elif result == 'OK':
             return data

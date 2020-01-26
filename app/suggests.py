@@ -35,7 +35,9 @@ class StationSuggester:
     async def _fetch_station_suggests_raw(string):
         params = {'stationNamePart': string, 'lang': 'ru'}
         async with aiohttp.ClientSession() as session:
-            response = await session.get(config.SUGGESTS_BASE_URL, params=params)
+            response = await session.get(
+                config.SUGGESTS_BASE_URL, params=params,
+            )
             logging.info(
                 f'Suggest request for: {string}, status={response.status}, '
                 f'url={response.url}',
@@ -120,7 +122,9 @@ class Train:
 
     @classmethod
     def from_rzd_dict(cls, data):
-        categories = {cat['typeCarCharCode'] for cat in data['serviceCategories']}
+        categories = {
+            cat['typeCarCharCode'] for cat in data['serviceCategories']
+        }
         instance = cls(
             brand=data['brand'],
             carrier=data['carrier'],
@@ -151,9 +155,7 @@ async def trains(departure, destination, date_str):
 
     async with aiohttp.ClientSession() as session:
         data = await monitor.rzd_rid_request(
-            session,
-            config.SUGGEST_TRAINS_URL,
-            args
+            session, config.SUGGEST_TRAINS_URL, args,
         )
 
     trains = collections.OrderedDict()

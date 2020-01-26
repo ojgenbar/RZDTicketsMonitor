@@ -38,8 +38,7 @@ def validate_date_string(string):
     max_date = today + datetime.timedelta(days=config.DATES_INTERVAL)
     if not today <= input_date <= max_date:
         message = messages.DATE_ERROR_TEMPLATE.format(
-            today.strftime(date_format),
-            max_date.strftime(date_format)
+            today.strftime(date_format), max_date.strftime(date_format),
         )
         raise ValueError(message)
     return input_date.strftime(date_format)

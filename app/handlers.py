@@ -20,7 +20,7 @@ from app.configs import messages
 
 
 async def cmd_help(message: types.Message):
-    msg = config.HELP_STRING
+    msg = messages.HELP_STRING
     await message.reply(msg, reply_markup=markups.DEFAULT_MARKUP)
 
 
@@ -163,7 +163,7 @@ async def process_destination(
             await bot.bot.send_message(state.user, messages.WAIT_TRAINS_SEARCH)
             data['destination'] = suggester.match_id
             trains = await suggests.trains(
-                data['departure'], data['destination'], data['date']
+                data['departure'], data['destination'], data['date'],
             )
             if not trains:
                 await bot.bot.send_message(state.user, messages.NO_TRAINS)
@@ -171,18 +171,20 @@ async def process_destination(
                 return
             await forms.MonitorParameters.next()
             send_function = functools.partial(
-                message.reply, parse_mode=ParseMode.MARKDOWN
+                message.reply, parse_mode=ParseMode.MARKDOWN,
             )
             await _send_trains(
-                send_function, messages.AVAILABLE_TRAINS_HEADER, trains
+                send_function, messages.AVAILABLE_TRAINS_HEADER, trains,
             )
             msg = messages.CHOOSE_TRAIN_NUMBER_TEMPLATE.format(
-                next(iter(trains))
+                next(iter(trains)),
             )
             markup = markups.build_from_list(
                 number for number in sorted(trains)
             )
-    await message.reply(msg, reply_markup=markup, parse_mode=ParseMode.MARKDOWN)
+    await message.reply(
+        msg, reply_markup=markup, parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 async def process_train(message: types.Message, state: dispatcher.FSMContext):
@@ -192,7 +194,9 @@ async def process_train(message: types.Message, state: dispatcher.FSMContext):
     await forms.MonitorParameters.next()
     markup = markups.build_from_list(config.SUGGEST_TYPES)
     await message.reply(
-        messages.QUESTION_CAR_TYPE, reply_markup=markup, parse_mode=ParseMode.MARKDOWN
+        messages.QUESTION_CAR_TYPE,
+        reply_markup=markup,
+        parse_mode=ParseMode.MARKDOWN,
     )
 
 
@@ -204,7 +208,9 @@ async def process_car_type(
 
     markup = markups.build_from_list(config.SUGGEST_COUNT)
     await forms.MonitorParameters.next()
-    await message.reply(messages.QUESTION_TICKETS_QUANTITY, reply_markup=markup)
+    await message.reply(
+        messages.QUESTION_TICKETS_QUANTITY, reply_markup=markup,
+    )
 
 
 async def process_count(message: types.Message, state: dispatcher.FSMContext):
@@ -263,8 +269,7 @@ async def start(message, state):
     try:
         await mon.run()
         await send_message(
-            messages.MONITOR_IS_SHUT_DOWN,
-            parse_mode=ParseMode.MARKDOWN
+            messages.MONITOR_IS_SHUT_DOWN, parse_mode=ParseMode.MARKDOWN,
         )
     except monitor.RZDNegativeResponse as e:
         msg = messages.FAILED_TO_START_TEMPLATE.format(str(e))

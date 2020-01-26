@@ -1,6 +1,6 @@
 CANNOT_FIND_EXACT_MATCH = (
-    "Can't find exact match. "
-    "Choose one of below or check spelling and type it correctly."
+    'Can\'t find exact match. '
+    'Choose one of below or check spelling and type it correctly.'
 )
 AVAILABLE_TRAINS_HEADER = 'Available trains:'
 
@@ -19,9 +19,13 @@ QUESTION_CAR_TYPE = (
     'What car category would you like '
     '(as in the message above: e.g. "*Плац*")?'
 )
-QUESTION_DEPARTURE_STATION = 'What is departure station ID (e.g. "Санкт-Петербург")?'
-QUESTION_DESTINATION_STATION = 'What is destination station ID (e.g. "Москва")?'
-WAIT_TRAINS_SEARCH = "I'm looking for available trains, wait..."
+QUESTION_DEPARTURE_STATION = (
+    'What is departure station ID (e.g. "Санкт-Петербург")?'
+)
+QUESTION_DESTINATION_STATION = (
+    'What is destination station ID (e.g. "Москва")?'
+)
+WAIT_TRAINS_SEARCH = 'I\'m looking for available trains, wait...'
 NO_TRAINS = 'No trains meet expectations! Cancelling...'
 QUESTION_TICKETS_QUANTITY = 'Quantity of tickets?'
 INVALID_QUANTITY = 'Quantity must be a positive integer!'
@@ -39,3 +43,13 @@ DATE_ERROR_TEMPLATE = (
 ANOTHER_MONITOR_IS_RUN = 'Another monitor is ran. Cancel it first: /cancel'
 MONITOR_IS_SHUT_DOWN = 'Monitor is shut *down*.'
 CANNOT_FETCH_RESULT_FROM_RZD = 'Cannot fetch result from RZD site.'
+
+HELP_STRING = (
+    'Hi!\n'
+    'Wanna buy ticket to train but there are no available? Try this!\n'
+    'This is RZD Tickets monitor. Send us data about a train and we will '
+    'watch if some tickets appear!\n'
+    'Type /start to start\n'
+    'Type /cancel to cancel monitor\n'
+    'Type /help to show this help\n'
+)
