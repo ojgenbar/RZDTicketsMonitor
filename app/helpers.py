@@ -20,3 +20,7 @@ def nearest_days_string(length=3):
         date_str = (date + datetime.timedelta(days=i)).strftime('%d.%m.%Y')
         res.append(date_str)
     return res
+
+
+def prepare_to_log(string):
+    return string.replace('\n', '\\n')

@@ -1,5 +1,3 @@
-import gzip
-import logging.handlers
 import os
 
 HELP_STRING = (
@@ -13,12 +11,12 @@ HELP_STRING = (
 )
 
 SUGGEST_TRAINS = {
-    ('2010290', '2000000'): ['126Ч'],
-    ('2000000', '2010290'): ['126Я'],
-    ('2010290', '2004000'): ['617Я'],
-    ('2004000', '2010290'): ['618Я'],
-    ('2004000', '2000000'): ['118А'],
-    ('2000000', '2004000'): ['030А'],
+    ('ЧЕРЕПОВЕЦ 1', 'МОСКВА'): ['126Ч'],
+    ('МОСКВА', 'ЧЕРЕПОВЕЦ 1'): ['126Я'],
+    ('ЧЕРЕПОВЕЦ 1', 'САНКТ-ПЕТЕРБУРГ'): ['617Я'],
+    ('САНКТ-ПЕТЕРБУРГ', 'ЧЕРЕПОВЕЦ 1'): ['618Я'],
+    ('САНКТ-ПЕТЕРБУРГ', 'МОСКВА'): ['118А'],
+    ('МОСКВА', 'САНКТ-ПЕТЕРБУРГ'): ['030А'],
 }
 
 SUGGEST_TYPES = ['Плац', 'Купе', 'Люкс']
@@ -33,43 +31,17 @@ SUGGEST_DIRECTIONS = sorted(SUGGEST_DIRECTIONS)
 DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
 
 
-LOG_FILENAME = 'logs/rzd_monitor.log'
-os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
-
-
-def namer(name):
-    return name + '.gz'
-
-
-def rotator(source, dest):
-    with open(source, 'rb') as sf:
-        data = sf.read()
-        compressed = gzip.compress(data)
-        with open(dest, 'wb') as df:
-            df.write(compressed)
-    os.remove(source)
-
-
-rh = logging.handlers.RotatingFileHandler(
-    LOG_FILENAME, 'a', encoding='utf8', maxBytes=100 * 2 ** 20, backupCount=10,
-)
-rh.rotator = rotator
-rh.namer = namer
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
-    handlers=[rh, logging.StreamHandler()],
-)
-
 API_TOKEN_ENV = 'RZD_TICKETS_MONITOR_BOT_TOKEN'
 PROXY_URL_ENV = 'RZD_TICKETS_MONITOR_BOT_PROXY'
 API_TOKEN = os.getenv(API_TOKEN_ENV)
 PROXY_URL = os.getenv(PROXY_URL_ENV)
+MAX_TRAINS_PER_MESSAGE = 18
 
 __all__ = [
     'API_TOKEN',
     'API_TOKEN_ENV',
     'HELP_STRING',
+    'MAX_TRAINS_PER_MESSAGE',
     'PROXY_URL',
     'PROXY_URL_ENV',
     'SUGGEST_COUNT',

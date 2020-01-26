@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from bot_app import config
+from .configs import bot as config
 
 if not config.API_TOKEN:
     msg = 'You must specify bot token ' 'in env variable "{}"!'.format(

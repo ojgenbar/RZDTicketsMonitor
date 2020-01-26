@@ -9,3 +9,6 @@ BASIC_DELAY_BASE = 20
 MIN_SUGGESTS_SIMILARITY = 70
 SUGGESTS_LIMIT = 5
 SUGGESTS_BASE_URL = r'http://www.rzd.ru/suggester'
+
+# Suggest train
+SUGGEST_TRAINS_URL = r'https://pass.rzd.ru/timetable/public/ru?layer_id=5827'

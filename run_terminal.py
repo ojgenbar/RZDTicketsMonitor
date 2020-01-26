@@ -1,7 +1,7 @@
 import asyncio
 from pprint import pprint
 
-from common.monitor import AsyncMonitor
+from app.monitor import AsyncMonitor
 
 
 def main():

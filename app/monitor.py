@@ -7,7 +7,8 @@ from pprint import pformat
 
 import aiohttp
 
-from common import config
+from app import helpers
+from app.configs import rzd as config
 
 
 class RZDNegativeResponse(RuntimeError):
@@ -56,31 +57,10 @@ class AsyncMonitor:
     def get_places_count(cars):
         return sum(c['seats'][0]['free'] for c in cars)
 
-    async def make_request(self, result_json):
-        url = config.BASE_URL
-
-        async with self.session.post(
-                url, data=result_json, headers=self.headers,
-        ) as resp:
-            result_json = await resp.json(content_type=None)
-            logging.info(pformat(result_json).replace('\n', '\\n'))
-
-        return result_json
-
     async def get_data(self):
-        args = {**self.args}
-        rid_data = await self.make_request(args)
-        rid = str(rid_data['RID'])
-
-        args['rid'] = rid
-
-        await asyncio.sleep(config.SLEEP_AFTER_RID_REQUEST)
-
-        data = await self.make_request(args)
-        if data['result'] == 'RID':
-            logging.warning(f'Unexpected RID result. Data: f{data}')
-            data = await self.get_data()
-            await asyncio.sleep(2)
+        data = await rzd_rid_request(
+            self.session, config.BASE_URL, self.args, headers=self.headers
+        )
         return data
 
     async def run(self):
@@ -102,3 +82,42 @@ class AsyncMonitor:
                     logging.warning(traceback.format_exc())
                 finally:
                     await asyncio.sleep(5 + self.delay_base * random.random())
+
+
+async def rzd_request(session, url, args, *, headers=None):
+    log_extra = {
+        'args_': args,
+        'url': url
+    }
+    logging.info('request: {!r}'.format(log_extra))
+    async with session.post(
+            url, data=args, headers=headers,
+    ) as resp:
+        result_json = await resp.json(content_type=None)
+        logging.info(helpers.prepare_to_log(pformat(result_json)))
+    return result_json
+
+
+async def rzd_rid_request(session, url, args, *, headers=None, rid_sleep=config.SLEEP_AFTER_RID_REQUEST):
+    args_copy = args.copy()
+    rid_data = await rzd_request(session, url, args_copy, headers=headers)
+    if rid_data['result'] == 'OK':
+        return rid_data
+
+    rid = str(rid_data['RID'])
+
+    args_copy['rid'] = rid
+
+    await asyncio.sleep(rid_sleep)
+
+    data = await rzd_request(session, url, args_copy, headers=headers)
+    if data['result'] == 'RID':
+        logging.warning(
+            f'Unexpected RID result. '
+            f'Data: {repr(data)}, RID timeout: {rid_sleep} sec'
+        )
+        data = await rzd_rid_request(
+            session, url, args, headers=headers, rid_sleep=rid_sleep*2
+        )
+        await asyncio.sleep(2)
+    return data
