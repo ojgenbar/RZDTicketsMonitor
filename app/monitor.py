@@ -9,6 +9,7 @@ import aiohttp
 
 from app import helpers
 from app.configs import rzd as config
+from app.configs import messages
 
 
 class RZDNegativeResponse(RuntimeError):
@@ -31,10 +32,7 @@ class AsyncMonitor:
         self.cars_type = cars_type
         self.delay_base = delay_base
         self.callback = callback or self.default_callback
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        }
+        self.headers = config.HEADERS
         self.session = None
         self.stop = False
         self.last_message = None
@@ -64,6 +62,7 @@ class AsyncMonitor:
         return data
 
     async def run(self):
+        first_request = True
         async with aiohttp.ClientSession() as self.session:
             while not self.stop:
                 try:
@@ -76,6 +75,9 @@ class AsyncMonitor:
                     logging.info(f'{self.log_prefix}{msg}')
                     if places >= self.requested_count:
                         await self.callback(msg)
+                        if first_request:
+                            return
+                    first_request = False
                 except RZDNegativeResponse:
                     raise
                 except Exception:
@@ -85,6 +87,8 @@ class AsyncMonitor:
 
 
 async def rzd_request(session, url, args, *, headers=None):
+    if not headers:
+        headers = config.HEADERS
     log_extra = {
         'args_': args,
         'url': url
@@ -98,7 +102,10 @@ async def rzd_request(session, url, args, *, headers=None):
     return result_json
 
 
-async def rzd_rid_request(session, url, args, *, headers=None, rid_sleep=config.SLEEP_AFTER_RID_REQUEST):
+async def rzd_rid_request(
+        session, url, args, *,
+        headers=None
+):
     args_copy = args.copy()
     rid_data = await rzd_request(session, url, args_copy, headers=headers)
     if rid_data['result'] == 'OK':
@@ -108,16 +115,20 @@ async def rzd_rid_request(session, url, args, *, headers=None, rid_sleep=config.
 
     args_copy['rid'] = rid
 
+    rid_sleep = config.SLEEP_AFTER_RID_REQUEST
     await asyncio.sleep(rid_sleep)
 
-    data = await rzd_request(session, url, args_copy, headers=headers)
-    if data['result'] == 'RID':
-        logging.warning(
-            f'Unexpected RID result. '
-            f'Data: {repr(data)}, RID timeout: {rid_sleep} sec'
-        )
-        data = await rzd_rid_request(
-            session, url, args, headers=headers, rid_sleep=rid_sleep*2
-        )
-        await asyncio.sleep(2)
-    return data
+    for i in range(5):
+        data = await rzd_request(session, url, args_copy, headers=headers)
+        result = data['result']
+        if result == 'RID':
+            logging.warning(
+                f'Unexpected RID result. Data: {repr(data)}'
+            )
+            await asyncio.sleep(rid_sleep)
+        elif result == 'OK':
+            return data
+        elif result == 'FAIL':
+            break
+
+    raise RuntimeError(messages.CANNOT_FETCH_RESULT_FROM_RZD)

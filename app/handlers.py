@@ -64,22 +64,20 @@ async def cmd_start(message: types.Message, state: dispatcher.FSMContext):
     Conversation's entry point
     """
     if state.user in bot.messengers and not bot.messengers[state.user].stop:
-        msg = 'Another monitor is ran. Cancel it first: /cancel'
+        msg = messages.ANOTHER_MONITOR_IS_RUN
         await message.reply(msg, reply_markup=markups.DEFAULT_MARKUP)
         return
 
     # Set state
     await forms.MonitorParameters.date.set()
-    msg = config.HELP_STRING
-    await bot.bot.send_message(state.user, msg)
 
     days = helpers.nearest_days_string()
-    text = f'What is desired date? Follow this pattern: {days[0]}'
+    text = messages.QUESTION_DATE_TEMPLATE.format(days[0])
     markup = markups.build_from_list(days)
     await message.reply(text, reply_markup=markup)
 
 
-async def cancel_handler(message: types.Message, state: dispatcher.FSMContext):
+async def cmd_cancel(message: types.Message, state: dispatcher.FSMContext):
     """
     Allow user to cancel any action
     """
@@ -104,7 +102,13 @@ async def cancel_handler(message: types.Message, state: dispatcher.FSMContext):
 
 async def process_date(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
-        data['date'] = helpers.prepare_text_input(message.text)
+        string = helpers.prepare_text_input(message.text)
+        try:
+            string = helpers.validate_date_string(string)
+        except ValueError as exc:
+            await message.reply(str(exc).capitalize())
+            return
+        data['date'] = string
 
     await forms.MonitorParameters.next()
     msg = messages.QUESTION_DEPARTURE_STATION
@@ -135,7 +139,7 @@ async def _send_trains(send_func, pre_message, trains):
     left = 0
     step = config.MAX_TRAINS_PER_MESSAGE
     values = list(trains.values())
-    while left <= len(trains):
+    while left < len(trains):
         right = left + step
         trains_to_send = (
             train.to_message()
@@ -163,7 +167,7 @@ async def process_destination(
             )
             if not trains:
                 await bot.bot.send_message(state.user, messages.NO_TRAINS)
-                await cancel_handler(message, state)
+                await cmd_cancel(message, state)
                 return
             await forms.MonitorParameters.next()
             send_function = functools.partial(
@@ -176,7 +180,7 @@ async def process_destination(
                 next(iter(trains))
             )
             markup = markups.build_from_list(
-                number for number in trains
+                number for number in sorted(trains)
             )
     await message.reply(msg, reply_markup=markup, parse_mode=ParseMode.MARKDOWN)
 
@@ -205,7 +209,8 @@ async def process_car_type(
 
 async def process_count(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
-        data['count'] = message.text
+        text = message.text
+        data['count'] = text
 
     await message.reply(messages.STARTING, reply_markup=markups.DEFAULT_MARKUP)
     await start(message, state)
@@ -252,10 +257,14 @@ async def start(message, state):
     await send_message(msg, parse_mode=ParseMode.MARKDOWN)
     try:
         await mon.run()
+        await send_message(
+            messages.MONITOR_IS_SHUT_DOWN,
+            parse_mode=ParseMode.MARKDOWN
+        )
     except monitor.RZDNegativeResponse as e:
         msg = messages.FAILED_TO_START_TEMPLATE.format(str(e))
         await send_message(msg)
-        bot.messengers.pop(state.user, None)
+    bot.messengers.pop(state.user, None)
 
 
 async def unexpected_text(message: types.Message):

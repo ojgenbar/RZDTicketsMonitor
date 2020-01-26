@@ -14,6 +14,7 @@ AVAILABLE_TRAINS_TEMPLATE = (
     'Allowed categories: {train.service_categories_string}'
 )
 
+QUESTION_DATE_TEMPLATE = 'What is desired date? Follow this pattern: {}'
 QUESTION_CAR_TYPE = (
     'What car category would you like '
     '(as in the message above: e.g. "*Плац*")?'
@@ -29,3 +30,11 @@ FAILED_TO_START_TEMPLATE = (
 )
 
 UNEXPECTED_TEXT = 'Unexpected text. Type /help for documentation.'
+
+DATE_ERROR_TEMPLATE = (
+    'Invalid date! Date must belong to interval from {} to {}!'
+)
+
+ANOTHER_MONITOR_IS_RUN = 'Another monitor is ran. Cancel it first: /cancel'
+MONITOR_IS_SHUT_DOWN = 'Monitor is shut *down*.'
+CANNOT_FETCH_RESULT_FROM_RZD = 'Cannot fetch result from RZD site.'

@@ -110,7 +110,10 @@ class Train:
 
     @property
     def service_categories_string(self):
-        return '*{}*'.format('*, *'.join(self.service_categories))
+        if self.service_categories:
+            return '*{}*'.format('*, *'.join(self.service_categories))
+        else:
+            return ''
 
     def to_message(self, template=messages.AVAILABLE_TRAINS_TEMPLATE):
         # return template.format(**dataclasses.asdict(self))
@@ -151,8 +154,7 @@ async def trains(departure, destination, date_str):
         data = await monitor.rzd_rid_request(
             session,
             config.SUGGEST_TRAINS_URL,
-            args,
-            rid_sleep=config.SLEEP_AFTER_RID_REQUEST*2
+            args
         )
 
     trains = collections.OrderedDict()

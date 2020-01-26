@@ -4,6 +4,10 @@ SLEEP_AFTER_RID_REQUEST = 1
 SLEEP_AFTER_UNSUCCESSFUL_REQUEST = 3
 REQUEST_ATTEMPTS = 10
 BASIC_DELAY_BASE = 20
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+}
 
 # Suggest station
 MIN_SUGGESTS_SIMILARITY = 70
@@ -12,3 +16,7 @@ SUGGESTS_BASE_URL = r'http://www.rzd.ru/suggester'
 
 # Suggest train
 SUGGEST_TRAINS_URL = r'https://pass.rzd.ru/timetable/public/ru?layer_id=5827'
+
+# Dates
+DATE_FORMAT = '%d.%m.%Y'
+DATES_INTERVAL = 121

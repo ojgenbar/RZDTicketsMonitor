@@ -8,7 +8,7 @@ _register = bot.dp.register_message_handler
 _register(handlers.cmd_help, state='*', commands=['help'])
 _register(handlers.cmd_status, state='*', commands=['status'])
 _register(handlers.cmd_start, state='*', commands=['start'])
-_register(handlers.cancel_handler, state='*', commands=['cancel'])
+_register(handlers.cmd_cancel, state='*', commands=['cancel'])
 
 # State dependant
 _parameters = forms.MonitorParameters
