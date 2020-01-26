@@ -8,8 +8,8 @@ from pprint import pformat
 import aiohttp
 
 from app import helpers
-from app.configs import rzd as config
 from app.configs import messages
+from app.configs import rzd as config
 
 
 class RZDNegativeResponse(RuntimeError):

@@ -1,7 +1,8 @@
 import datetime
 import json
-from app.configs import rzd as config
+
 from app.configs import messages
+from app.configs import rzd as config
 
 
 def dump_to_json(data):

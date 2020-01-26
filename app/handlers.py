@@ -1,5 +1,7 @@
 import asyncio
 import datetime
+import functools
+import itertools
 import logging
 import traceback
 
@@ -9,8 +11,6 @@ from aiogram import types
 from aiogram.types import ParseMode
 
 from app import bot
-import functools
-import itertools
 from app import forms
 from app import helpers
 from app import markups

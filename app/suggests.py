@@ -1,17 +1,16 @@
 import asyncio
+import collections
 import dataclasses
 import json
 import logging
-import collections
-
 import typing
 
 import aiohttp
 from fuzzywuzzy import process
 
 from app import monitor
-from app.configs import rzd as config
 from app.configs import messages
+from app.configs import rzd as config
 
 
 class StationSuggester:
