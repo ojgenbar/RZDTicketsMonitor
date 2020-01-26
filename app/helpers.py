@@ -43,3 +43,10 @@ def validate_date_string(string):
         )
         raise ValueError(message)
     return input_date.strftime(date_format)
+
+
+def validate_count(string):
+    count = int(string)
+    if not count > 0:
+        raise ValueError(messages.INVALID_QUANTITY)
+    return count

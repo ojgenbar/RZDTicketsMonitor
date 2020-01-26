@@ -24,6 +24,7 @@ QUESTION_DESTINATION_STATION = 'What is destination station ID (e.g. "Москв
 WAIT_TRAINS_SEARCH = "I'm looking for available trains, wait..."
 NO_TRAINS = 'No trains meet expectations! Cancelling...'
 QUESTION_TICKETS_QUANTITY = 'Quantity of tickets?'
+INVALID_QUANTITY = 'Quantity must be a positive integer!'
 STARTING = 'Starting...'
 FAILED_TO_START_TEMPLATE = (
     'Failed to start Monitor:\nRZD response message: "{}"'

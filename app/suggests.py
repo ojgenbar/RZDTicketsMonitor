@@ -116,7 +116,6 @@ class Train:
             return ''
 
     def to_message(self, template=messages.AVAILABLE_TRAINS_TEMPLATE):
-        # return template.format(**dataclasses.asdict(self))
         return template.format(train=self)
 
     @classmethod

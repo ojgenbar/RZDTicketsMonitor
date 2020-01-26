@@ -209,8 +209,13 @@ async def process_car_type(
 
 async def process_count(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
-        text = message.text
-        data['count'] = text
+        string = message.text
+        try:
+            count = helpers.validate_count(string)
+        except ValueError as exc:
+            await message.reply(str(exc).capitalize())
+            return
+        data['count'] = count
 
     await message.reply(messages.STARTING, reply_markup=markups.DEFAULT_MARKUP)
     await start(message, state)
@@ -230,7 +235,7 @@ async def start(message, state):
                 'dt0': data['date'],
                 'tnum0': data['train'],
             }
-            count = int(data['count'])
+            count = data['count']
             car_type = data['car_type']
         except Exception:
             traceback.print_exc()
