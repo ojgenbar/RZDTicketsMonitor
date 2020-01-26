@@ -2,7 +2,7 @@ import os
 
 
 SUGGEST_DIRECTIONS = ['МОСКВА', 'САНКТ-ПЕТЕРБУРГ', 'ЧЕРЕПОВЕЦ 1']
-SUGGEST_TYPES = ['Плац', 'Купе', 'Люкс']
+SUGGEST_TYPES = ['Плац', 'Купе', 'Сид']
 SUGGEST_COUNT = [str(i) for i in range(1, 4)]
 
 DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
