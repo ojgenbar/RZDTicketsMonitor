@@ -157,8 +157,8 @@ async def trains(departure, destination, date_str):
             session, config.SUGGEST_TRAINS_URL, args,
         )
 
-    trains = collections.OrderedDict()
+    trains_dict = collections.OrderedDict()
     for train_data in data['tp'][0]['list']:
         train = Train.from_rzd_dict(train_data)
-        trains[train.number] = train
-    return trains
+        trains_dict[train.number] = train
+    return trains_dict

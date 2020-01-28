@@ -2,9 +2,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from .configs import bot as config
+from .configs import messages
+from . import routes
 
 if not config.API_TOKEN:
-    msg = 'You must specify bot token ' 'in env variable "{}"!'.format(
+    msg = messages.SPECIFY_TOKEN_TEMPLATE.format(
         config.API_TOKEN_ENV,
     )
     raise RuntimeError(msg)
@@ -12,8 +14,7 @@ if not config.API_TOKEN:
 bot = Bot(token=config.API_TOKEN, proxy=config.PROXY_URL)
 
 storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
-
+dispatcher = Dispatcher(bot, storage=storage)
 messengers = {}
 
-from . import routes
+routes.apply_routes(dispatcher)

@@ -31,7 +31,7 @@ def main():
     parser.add_argument(
         '--type',
         dest='car_type',
-        choices=['Плац', 'Люкс', 'Купе'],
+        choices=['Плац', 'Люкс', 'Купе', 'Сид', 'Мягкий'],
         default='Плац',
         help='Defines car type. default=\'Плац\'',
     )
@@ -56,7 +56,7 @@ def main():
 
     pprint(rzd_args)
 
-    mon = AsyncMonitor(rzd_args, args.count, args.car_type, delay_base=-5)
+    mon = AsyncMonitor(rzd_args, args.count, args.car_type)
     asyncio.run(mon.run())
 
 

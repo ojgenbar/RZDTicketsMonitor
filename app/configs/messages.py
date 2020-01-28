@@ -1,3 +1,4 @@
+SPECIFY_TOKEN_TEMPLATE = 'You must specify bot token in env variable "{}"!'
 CANNOT_FIND_EXACT_MATCH = (
     'Can\'t find exact match. '
     'Choose one of below or check spelling and type it correctly.'
