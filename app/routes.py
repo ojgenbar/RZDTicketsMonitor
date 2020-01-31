@@ -6,9 +6,9 @@ def apply_routes(dp):
     _register = dp.register_message_handler
 
     # Main
-    _register(handlers.cmd_help, state='*', commands=['help'])
+    _register(handlers.cmd_help, state='*', commands=['help', 'start'])
     _register(handlers.cmd_status, state='*', commands=['status'])
-    _register(handlers.cmd_start, state='*', commands=['start'])
+    _register(handlers.cmd_set, state='*', commands=['set'])
     _register(handlers.cmd_cancel, state='*', commands=['cancel'])
 
     # State dependant

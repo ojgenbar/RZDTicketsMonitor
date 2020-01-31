@@ -1,7 +1,7 @@
 SPECIFY_TOKEN_TEMPLATE = 'You must specify bot token in env variable "{}"!'
 CANNOT_FIND_EXACT_MATCH = (
     'Can\'t find exact match. '
-    'Choose one of below or check spelling and type it correctly.'
+    'Choose one of the following or check spelling and type it correctly.'
 )
 AVAILABLE_TRAINS_HEADER = 'Available trains:'
 
@@ -15,21 +15,21 @@ AVAILABLE_TRAINS_TEMPLATE = (
     'Allowed categories: {train.service_categories_string}'
 )
 
-QUESTION_DATE_TEMPLATE = 'What is desired date? Follow this pattern: {}'
+QUESTION_DATE_TEMPLATE = 'What is the desired date? Follow this pattern: {}'
 QUESTION_CAR_TYPE = (
     'What car category would you like '
     '(as in the message above: e.g. "*Плац*")?'
 )
 QUESTION_DEPARTURE_STATION = (
-    'What is departure station ID (e.g. "Санкт-Петербург")?'
+    'What is the departure station (e.g. "Санкт-Петербург")?'
 )
 QUESTION_DESTINATION_STATION = (
-    'What is destination station ID (e.g. "Москва")?'
+    'What is the destination station (e.g. "Москва")?'
 )
 WAIT_TRAINS_SEARCH = 'I\'m looking for available trains, wait...'
 NO_TRAINS = 'No trains meet expectations! Cancelling...'
-QUESTION_TICKETS_QUANTITY = 'Quantity of tickets?'
-INVALID_QUANTITY = 'Quantity must be a positive integer!'
+QUESTION_TICKETS_QUANTITY = 'The number of tickets?'
+INVALID_QUANTITY = 'The number must be a positive integer!'
 STARTING = 'Starting...'
 FAILED_TO_START_TEMPLATE = (
     'Failed to start Monitor:\nRZD response message: "{}"'
@@ -38,19 +38,24 @@ FAILED_TO_START_TEMPLATE = (
 UNEXPECTED_TEXT = 'Unexpected text. Type /help for documentation.'
 
 DATE_ERROR_TEMPLATE = (
-    'Invalid date! Date must belong to interval from {} to {}!'
+    'Invalid date! The date must be between {} and {}!'
 )
 
-ANOTHER_MONITOR_IS_RUN = 'Another monitor is ran. Cancel it first: /cancel'
+ANOTHER_MONITOR_IS_RUN = 'Another monitor is running. Cancel it first: /cancel'
 MONITOR_IS_SHUT_DOWN = 'Monitor is shut *down*.'
 CANNOT_FETCH_RESULT_FROM_RZD = 'Cannot fetch result from RZD site.'
 
 HELP_STRING = (
     'Hi!\n'
-    'Wanna buy ticket to train but there are no available? Try this!\n'
-    'This is RZD Tickets monitor. Send us data about a train and we will '
-    'watch if some tickets appear!\n'
-    'Type /start to start\n'
-    'Type /cancel to cancel monitor\n'
+    'Wanna buy a train ticket but there are no available? Try this!\n'
+    'This is RZD Tickets monitor. Send us the train details and we will see if '
+    'tickets appear!\n\n'
+    'Source code:\n'
+    'https://github.com/ojgenbar/RZDTicketsMonitor\n\n'
+    'Type /set to set new monitor\n'
+    'Type /cancel to cancel current monitor\n'
     'Type /help to show this help\n'
 )
+
+CANCELLING_MONITOR = "I'm cancelling current monitor, wait..."
+NOTHING_TO_CANCEL = 'Nothing to cancel.'

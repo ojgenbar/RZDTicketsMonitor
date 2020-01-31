@@ -5,7 +5,7 @@ SUGGEST_DIRECTIONS = ['МОСКВА', 'САНКТ-ПЕТЕРБУРГ', 'ЧЕРЕ
 SUGGEST_TYPES = ['Плац', 'Купе', 'Сид']
 SUGGEST_COUNT = [str(i) for i in range(1, 4)]
 
-DEFAULT_MARKUP_BUTTONS = ['/start', '/cancel', '/status']
+DEFAULT_MARKUP_BUTTONS = ['/set', '/cancel', '/status']
 
 API_TOKEN_ENV = 'RZD_TICKETS_MONITOR_BOT_TOKEN'
 PROXY_URL_ENV = 'RZD_TICKETS_MONITOR_BOT_PROXY'

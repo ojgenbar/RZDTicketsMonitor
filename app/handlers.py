@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import functools
 import itertools
@@ -59,9 +58,9 @@ async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
     )
 
 
-async def cmd_start(message: types.Message, state: dispatcher.FSMContext):
+async def cmd_set(message: types.Message, state: dispatcher.FSMContext):
     """
-    Conversation's entry point
+    Setting Monitor entry point
     """
     if state.user in bot.messengers and not bot.messengers[state.user].stop:
         msg = messages.ANOTHER_MONITOR_IS_RUN
@@ -84,20 +83,16 @@ async def cmd_cancel(message: types.Message, state: dispatcher.FSMContext):
     current_state = await state.get_state()
     if current_state is None:
         await message.reply(
-            'Nothing to cancel.', reply_markup=markups.DEFAULT_MARKUP,
+            messages.NOTHING_TO_CANCEL, reply_markup=markups.DEFAULT_MARKUP,
         )
         return
 
     logging.info('Cancelling state %r', current_state)
     async with state.proxy():
-        messenger = bot.messengers.pop(state.user, None)
+        messenger = bot.messengers.get(state.user, None)
         if messenger:
             messenger.stop = True
-            await asyncio.sleep(1)
-            await messenger.run()
-
-    await state.finish()
-    await message.reply('Cancelled.', reply_markup=markups.DEFAULT_MARKUP)
+    await message.reply(messages.CANCELLING_MONITOR)
 
 
 async def process_date(message: types.Message, state: dispatcher.FSMContext):
@@ -274,7 +269,10 @@ async def start(message, state):
     except monitor.RZDNegativeResponse as e:
         msg = messages.FAILED_TO_START_TEMPLATE.format(str(e))
         await send_message(msg)
+
+    await state.finish()
     bot.messengers.pop(state.user, None)
+    await send_message('Cancelled.', reply_markup=markups.DEFAULT_MARKUP)
 
 
 async def unexpected_text(message: types.Message):
