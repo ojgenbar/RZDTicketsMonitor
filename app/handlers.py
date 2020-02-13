@@ -7,7 +7,6 @@ import traceback
 import aiogram.utils.markdown as md
 from aiogram import dispatcher
 from aiogram import types
-from aiogram.types import ParseMode
 
 from app import bot
 from app import forms
@@ -16,6 +15,9 @@ from app import markups
 from app import suggests, monitor
 from app.configs import bot as config
 from app.configs import messages
+
+
+MODE_MARKDOWN = types.ParseMode.MARKDOWN
 
 
 async def cmd_help(message: types.Message):
@@ -54,7 +56,7 @@ async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
     await message.reply(
         msg,
         reply_markup=markups.DEFAULT_MARKUP,
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=MODE_MARKDOWN,
     )
 
 
@@ -92,7 +94,9 @@ async def cmd_cancel(message: types.Message, state: dispatcher.FSMContext):
         messenger = bot.messengers.get(state.user, None)
         if messenger:
             messenger.stop = True
-    await message.reply(messages.CANCELLING_MONITOR)
+    await message.reply(
+        messages.CANCELLING_MONITOR, reply_markup=markups.DEFAULT_MARKUP
+    )
 
 
 async def process_date(message: types.Message, state: dispatcher.FSMContext):
@@ -166,7 +170,7 @@ async def process_destination(
                 return
             await forms.MonitorParameters.next()
             send_function = functools.partial(
-                message.reply, parse_mode=ParseMode.MARKDOWN,
+                message.reply, parse_mode=MODE_MARKDOWN,
             )
             await _send_trains(
                 send_function, messages.AVAILABLE_TRAINS_HEADER, trains,
@@ -178,7 +182,7 @@ async def process_destination(
                 number for number in sorted(trains)
             )
     await message.reply(
-        msg, reply_markup=markup, parse_mode=ParseMode.MARKDOWN,
+        msg, reply_markup=markup, parse_mode=MODE_MARKDOWN,
     )
 
 
@@ -191,7 +195,7 @@ async def process_train(message: types.Message, state: dispatcher.FSMContext):
     await message.reply(
         messages.QUESTION_CAR_TYPE,
         reply_markup=markup,
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=MODE_MARKDOWN,
     )
 
 
@@ -260,11 +264,11 @@ async def start(message, state):
         sep='\n',
     )
     logging.info(f'{prefix}{msg}')
-    await send_message(msg, parse_mode=ParseMode.MARKDOWN)
+    await send_message(msg, parse_mode=MODE_MARKDOWN)
     try:
         await mon.run()
         await send_message(
-            messages.MONITOR_IS_SHUT_DOWN, parse_mode=ParseMode.MARKDOWN,
+            messages.MONITOR_IS_SHUT_DOWN, parse_mode=MODE_MARKDOWN,
         )
     except monitor.RZDNegativeResponse as e:
         msg = messages.FAILED_TO_START_TEMPLATE.format(str(e))
