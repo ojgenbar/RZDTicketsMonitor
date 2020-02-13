@@ -1,9 +1,10 @@
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from .configs import bot as config
-from .configs import messages
-from . import routes
+from app import routes
+from app.configs import bot as config
+from app.configs import messages
+
 
 if not config.API_TOKEN:
     msg = messages.SPECIFY_TOKEN_TEMPLATE.format(
