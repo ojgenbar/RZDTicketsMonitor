@@ -25,22 +25,22 @@ async def cmd_help(message: types.Message):
 
 async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
     if state.user in bot.messengers and not bot.messengers[state.user].stop:
-        messanger = bot.messengers[state.user]
-        if messanger.last_time:
+        messenger = bot.messengers[state.user]
+        if messenger.last_time:
             seconds = (
-                datetime.datetime.now() - messanger.last_time
+                datetime.datetime.now() - messenger.last_time
             ).total_seconds()
             last_message = md.text(
                 f'Last attempt:',
                 md.bold(f'{seconds:.1f}'),
-                f'seconds ago. {messanger.last_message}',
+                f'seconds ago. {messenger.last_message}',
             )
         else:
             last_message = ''
         msg = md.text(
             md.text('Status: RZD Monitor is', md.bold('active'), '.'),
             md.text('Params:'),
-            md.code(f'{helpers.dump_to_json(messanger.args)}'),
+            md.code(f'{helpers.dump_to_json(messenger.args)}'),
             last_message,
             sep='\n',
         )
@@ -92,7 +92,11 @@ async def cmd_cancel(message: types.Message, state: dispatcher.FSMContext):
         messenger = bot.messengers.get(state.user, None)
         if messenger:
             messenger.stop = True
-    await message.reply(messages.CANCELLING_MONITOR)
+            text = messages.CANCELLING_MONITOR
+        else:
+            text = messages.CANCELLED
+    await state.finish()
+    await message.reply(text, reply_markup=markups.DEFAULT_MARKUP)
 
 
 async def process_date(message: types.Message, state: dispatcher.FSMContext):
@@ -212,11 +216,11 @@ async def process_count(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         string = message.text
         try:
-            count = helpers.validate_count(string)
+            params = helpers.get_params_from_count(string)
         except ValueError as exc:
             await message.reply(str(exc).capitalize())
             return
-        data['count'] = count
+        data['count'] = params
 
     await message.reply(messages.STARTING, reply_markup=markups.DEFAULT_MARKUP)
     await start(message, state)
@@ -236,7 +240,7 @@ async def start(message, state):
                 'dt0': data['date'],
                 'tnum0': data['train'],
             }
-            count = data['count']
+            params = data['count']
             car_type = data['car_type']
         except Exception:
             traceback.print_exc()
@@ -245,18 +249,19 @@ async def start(message, state):
     prefix = f'@{message.from_user.username} {message.from_user.id} '
 
     mon = monitor.AsyncMonitor(
-        rzd_args,
-        count,
-        car_type,
+        args=rzd_args,
+        cars_type=car_type,
         delay_base=10,
         callback=send_message,
         prefix=prefix,
+        **params,
     )
     bot.messengers[state.user] = mon
 
     msg = md.text(
         md.code(f'{helpers.dump_to_json(rzd_args)}'),
-        md.text(f'Count: {count}, car type: {car_type}'),
+        md.code(f'{helpers.dump_to_json(params)}'),
+        md.text(f'Count: {params["requested_count"]}, car type: {car_type}'),
         sep='\n',
     )
     logging.info(f'{prefix}{msg}')
@@ -272,7 +277,7 @@ async def start(message, state):
 
     await state.finish()
     bot.messengers.pop(state.user, None)
-    await send_message('Cancelled.', reply_markup=markups.DEFAULT_MARKUP)
+    await send_message(messages.CANCELLED, reply_markup=markups.DEFAULT_MARKUP)
 
 
 async def unexpected_text(message: types.Message):

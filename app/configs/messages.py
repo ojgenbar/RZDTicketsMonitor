@@ -58,4 +58,7 @@ HELP_STRING = (
 )
 
 CANCELLING_MONITOR = "I'm cancelling current monitor, wait..."
+CANCELLED = 'Cancelled.'
 NOTHING_TO_CANCEL = 'Nothing to cancel.'
+
+SEATS_COUNT_GT_COUPE_SIZE = 'Seats count is greater than coupe size!'
