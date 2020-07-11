@@ -13,6 +13,7 @@ API_TOKEN = os.getenv(API_TOKEN_ENV)
 PROXY_URL = os.getenv(PROXY_URL_ENV)
 MAX_TRAINS_PER_MESSAGE = 15
 
+COMMAND_SYMBOL = '@'
 
 __all__ = [
     'API_TOKEN',

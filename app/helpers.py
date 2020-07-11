@@ -1,8 +1,15 @@
+import argparse
 import datetime
+import itertools
 import json
+import logging
 
 from app.configs import messages
 from app.configs import rzd as config
+from app.configs import bot as bot_config
+
+
+logger = logging.getLogger(__name__)
 
 
 def dump_to_json(data):
@@ -45,8 +52,48 @@ def validate_date_string(string):
     return input_date.strftime(date_format)
 
 
-def validate_count(string):
-    count = int(string)
+def get_params_from_count(string):
+    count_str, command_str = string.split(bot_config.COMMAND_SYMBOL, 1)
+    count = int(count_str)
     if not count > 0:
         raise ValueError(messages.INVALID_QUANTITY)
-    return count
+
+    params = {'requested_count': count}
+    if command_str:
+        try:
+            params.update(_parse_arguments(command_str))
+        except ValueError as exc:
+            logger.error(str(exc))
+    return params
+
+
+def _parse_arguments(string=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--mask',
+        type=lambda s: [bool(int(c)) for c in s],
+    )
+    parser.add_argument(
+        '--same_coupe',
+        action='store_true',
+    )
+    parser.add_argument(
+        '--coupe_size',
+        type=int,
+        default=4
+    )
+    args, invalid = parser.parse_known_args(string.split())
+    if invalid:
+        raise ValueError(f'Cannot parse string args: string={string!r}, invalid={invalid!r}')
+    return vars(args)
+
+
+def grouper_it(n, iterable):
+    it = iter(iterable)
+    while True:
+        chunk_it = itertools.islice(it, n)
+        try:
+            first_el = next(chunk_it)
+        except StopIteration:
+            return
+        yield itertools.chain((first_el,), chunk_it)

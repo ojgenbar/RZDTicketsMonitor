@@ -20,3 +20,8 @@ SUGGEST_TRAINS_URL = r'https://pass.rzd.ru/timetable/public/ru?layer_id=5827'
 # Dates
 DATE_FORMAT = '%d.%m.%Y'
 DATES_INTERVAL = 121
+
+# Train
+STRING_RANGE_SEP = '-'
+STRING_LIST_SEP = ','
+LAST_COUPE_SEAT = 36

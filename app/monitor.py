@@ -1,8 +1,11 @@
 import asyncio
+import dataclasses
 import datetime
+import itertools
 import logging
 import random
 import traceback
+import typing
 from pprint import pformat
 
 import aiohttp
@@ -10,6 +13,99 @@ import aiohttp
 from app import helpers
 from app.configs import messages
 from app.configs import rzd as config
+
+
+@dataclasses.dataclass
+class Car:
+    car_type: str
+    number: str
+    seats: typing.List[bool]
+    seats_count: int
+
+    @classmethod
+    def from_rzd_data(cls, data):
+        seats, count = cls._get_seats_list(data['places'])
+        instance = Car(
+            car_type=data['type'],
+            number=data['cnumber'],
+            seats=seats,
+            seats_count=count,
+        )
+        return instance
+
+    @staticmethod
+    def _convert_seat_to_int(seat: str):
+        if seat.isdigit():
+            return int(seat)
+        first3 = seat[:3]
+        if first3.isdigit():
+            return int(first3)
+        raise ValueError(f'Cannot convert to int seat string {seat!r}')
+
+    @classmethod
+    def _unwrap_seats_range(cls, seats_range):
+        left, right = seats_range.split(config.STRING_RANGE_SEP)
+        res = range(
+            cls._convert_seat_to_int(left),
+            cls._convert_seat_to_int(right) + 1
+        )
+        return res
+
+    @classmethod
+    def _get_seats_list(cls, places_string):
+        places_set = set()
+        for string in places_string.split(config.STRING_LIST_SEP):
+            if config.STRING_RANGE_SEP in string:
+                places_set.update(cls._unwrap_seats_range(string))
+            else:
+                places_set.add(cls._convert_seat_to_int(string))
+
+        lst = [False] * max(places_set)
+        for seat in places_set:
+            lst[seat - 1] = True
+        return lst, len(places_set)
+
+    def get_seats_count(self, seats_count=1, mask=None, same_coupe=False, coupe_size=4):
+        if mask:
+            projected = [i1 and i2 for i1, i2 in zip(mask, self.seats)]
+            projected.extend(self.seats[len(mask):])
+        else:
+            projected = self.seats
+
+        count = sum(projected)
+        if same_coupe and seats_count > 1:
+            if count < seats_count:
+                return 0
+            assert coupe_size >= seats_count, messages.SEATS_COUNT_GT_COUPE_SIZE
+            count = 0
+            coupe_part = itertools.islice(projected, config.LAST_COUPE_SEAT)
+            for coupe in helpers.grouper_it(coupe_size, coupe_part):
+                coupe_seats = sum(coupe)
+                if coupe_seats >= seats_count:
+                    count += coupe_seats
+        return count
+
+
+class Train:
+    def __init__(self, data):
+        self._data = data
+        self.cars = self.parse_cars(data)
+
+    @staticmethod
+    def parse_cars(data):
+        cars = {}
+        for car_data in data['lst'][0]['cars']:
+            car = Car.from_rzd_data(car_data)
+            cars[car.number] = car
+        return cars
+
+    def get_seats_count(self, car_type, seats_count=1, mask=None, same_coupe=False, coupe_size=4):
+        count = 0
+        for car in self.cars.values():
+            if car_type != car.car_type:
+                continue
+            count += car.get_seats_count(seats_count, mask, same_coupe, coupe_size)
+        return count
 
 
 class RZDNegativeResponse(RuntimeError):
@@ -22,6 +118,9 @@ class AsyncMonitor:
             args,
             requested_count=1,
             cars_type='Плац',
+            mask=None,
+            same_coupe=False,
+            coupe_size=4,
             *,
             delay_base=config.BASIC_DELAY_BASE,
             callback=None,
@@ -30,14 +129,18 @@ class AsyncMonitor:
         self.args = args
         self.requested_count = requested_count
         self.cars_type = cars_type
+        self.mask = mask
+        self.same_coupe = same_coupe
+        self.coupe_size = coupe_size
         self.delay_base = delay_base
         self.callback = callback or self.default_callback
+        self.log_prefix = prefix
+
         self.headers = config.HEADERS
         self.session = None
         self.stop = False
         self.last_message = None
         self.last_time = None
-        self.log_prefix = prefix
 
     @staticmethod
     async def default_callback(string):
@@ -67,8 +170,14 @@ class AsyncMonitor:
             while not self.stop:
                 try:
                     data = await self.get_data()
-                    cars = self.get_cars(data)
-                    places = self.get_places_count(cars)
+                    train = Train(data)
+                    places = train.get_seats_count(
+                        self.cars_type,
+                        self.requested_count,
+                        self.mask,
+                        self.same_coupe,
+                        self.coupe_size
+                    )
                     msg = f'Total: {places} tickets'
                     self.last_message = msg
                     self.last_time = datetime.datetime.now()
@@ -77,6 +186,7 @@ class AsyncMonitor:
                         await self.callback(msg)
                         if first_request:
                             return
+                        await asyncio.sleep(120 + self.delay_base * random.random())
                     first_request = False
                 except RZDNegativeResponse:
                     raise
