@@ -53,9 +53,15 @@ def validate_date_string(string):
 
 
 def get_params_from_count(string):
-    count_str, command_str = string.split(bot_config.COMMAND_SYMBOL, 1)
+    split = string.split(bot_config.COMMAND_SYMBOL, 1)
+    if len(split) == 2:
+        count_str, command_str = split
+    else:
+        count_str = split[0]
+        command_str = None
+
     count = int(count_str)
-    if not count > 0:
+    if count < 1:
         raise ValueError(messages.INVALID_QUANTITY)
 
     params = {'requested_count': count}
