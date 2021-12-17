@@ -30,3 +30,8 @@ This is RZD Tickets monitor.
         python  run_terminal.py \
         --type Купе --count 2 \
         2004000 2000000 001А 31.01.2020
+
+
+## Run as docker
+1. Create file `.env` with env variables: `RZD_TICKETS_MONITOR_BOT_TOKEN` and `RZD_TICKETS_MONITOR_BOT_PROXY` (optional).
+2. `docker-compose up -d`
