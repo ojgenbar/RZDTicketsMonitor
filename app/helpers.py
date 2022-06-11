@@ -1,13 +1,13 @@
 import argparse
 import datetime
-import itertools
 import json
 import logging
 
 from app.configs import messages
-from app.configs import rzd as config
 from app.configs import bot as bot_config
 
+from rzd_client import models
+from rzd_client import config as rzd_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def nearest_days_string(length=3):
 
     res = []
     for i in range(length):
-        date_str = (date + datetime.timedelta(days=i)).strftime('%d.%m.%Y')
+        date_str = (date + datetime.timedelta(days=i)).strftime(bot_config.DATE_FORMAT)
         res.append(date_str)
     return res
 
@@ -36,20 +36,20 @@ def prepare_to_log(string):
     return string.replace('\n', '\\n')
 
 
-def validate_date_string(string):
+def parse_date(string):
     string_date = string
     today = datetime.datetime.now().date()
-    if 4 <= len(string_date) < 5:
+    if len(string_date) == 5:
         string_date = '{}.{}'.format(string_date, today.year)
-    date_format = config.DATE_FORMAT
+    date_format = bot_config.DATE_FORMAT
     input_date = datetime.datetime.strptime(string_date, date_format).date()
-    max_date = today + datetime.timedelta(days=config.DATES_INTERVAL)
+    max_date = today + datetime.timedelta(days=bot_config.DATES_INTERVAL)
     if not today <= input_date <= max_date:
         message = messages.DATE_ERROR_TEMPLATE.format(
             today.strftime(date_format), max_date.strftime(date_format),
         )
         raise ValueError(message)
-    return input_date.strftime(date_format)
+    return input_date
 
 
 def get_params_from_count(string):
@@ -94,12 +94,9 @@ def _parse_arguments(string=None):
     return vars(args)
 
 
-def grouper_it(n, iterable):
-    it = iter(iterable)
-    while True:
-        chunk_it = itertools.islice(it, n)
-        try:
-            first_el = next(chunk_it)
-        except StopIteration:
-            return
-        yield itertools.chain((first_el,), chunk_it)
+def service_category_by_char_code(char_code: str):
+    source = char_code
+    for code, char_code in rzd_config.CHAR_CODE_BY_SERVICE_CATEGORY_MAPPER.items():
+        if source == char_code:
+            return models.ServiceCategory(code)
+    raise ValueError(f"Cannot find ServiceCategory with char_code: {char_code}")

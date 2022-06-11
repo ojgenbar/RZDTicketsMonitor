@@ -2,7 +2,7 @@ import gzip
 import logging.handlers
 import os
 
-LOG_FILENAME = 'logs/rzd_monitor.log'
+LOG_FILENAME = 'logs/log.log'
 os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
 
 
@@ -26,7 +26,7 @@ rh.rotator = rotator
 rh.namer = namer
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)-5.5s]  %(message)s',
+    format='%(asctime)s [%(levelname)-5.5s] [%(name)s] %(message)s',
     handlers=[rh, logging.StreamHandler()],
 )
 

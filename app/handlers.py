@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import functools
 import itertools
@@ -13,9 +14,15 @@ from app import bot
 from app import forms
 from app import helpers
 from app import markups
-from app import suggests, monitor
+from app import suggests
+from app import monitor
 from app.configs import bot as config
 from app.configs import messages
+from rzd_client import common
+from rzd_client import models
+
+
+logger = logging.getLogger(__name__)
 
 
 async def cmd_help(message: types.Message):
@@ -40,7 +47,7 @@ async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
         msg = md.text(
             md.text('Status: RZD Monitor is', md.bold('active'), '.'),
             md.text('Params:'),
-            md.code(f'{helpers.dump_to_json(messenger.args)}'),
+            md.code(f'{helpers.dump_to_json(messenger.args.as_rzd_args())}'),
             last_message,
             sep='\n',
         )
@@ -87,7 +94,7 @@ async def cmd_cancel(message: types.Message, state: dispatcher.FSMContext):
         )
         return
 
-    logging.info('Cancelling state %r', current_state)
+    logger.info('Cancelling state %r', current_state)
     async with state.proxy():
         messenger = bot.messengers.get(state.user, None)
         if messenger:
@@ -103,11 +110,11 @@ async def process_date(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         string = helpers.prepare_text_input(message.text)
         try:
-            string = helpers.validate_date_string(string)
+            date = helpers.parse_date(string)
         except ValueError as exc:
             await message.reply(str(exc).capitalize())
             return
-        data['date'] = string
+        data['date'] = date
 
     await forms.MonitorParameters.next()
     msg = messages.QUESTION_DEPARTURE_STATION
@@ -125,7 +132,7 @@ async def process_departure(
             msg = messages.CANNOT_FIND_EXACT_MATCH
             markup = markups.build_from_list(suggester.suggestions.keys())
         else:
-            data['departure'] = suggester.match_id
+            data['departure'] = models.Station(suggester.match_id)
             await forms.MonitorParameters.next()
             msg = messages.QUESTION_DESTINATION_STATION
             markup = markups.DIRECTIONS_MARKUP
@@ -160,9 +167,11 @@ async def process_destination(
             markup = markups.build_from_list(suggester.suggestions.keys())
         else:
             await bot.bot.send_message(state.user, messages.WAIT_TRAINS_SEARCH)
-            data['destination'] = suggester.match_id
+            data['destination'] = models.Station(suggester.match_id)
             trains = await suggests.trains(
-                data['departure'], data['destination'], data['date'],
+                models.TrainsOverviewRequestArgs(
+                    data['departure'], data['destination'], data['date'],
+                )
             )
             if not trains:
                 await bot.bot.send_message(state.user, messages.NO_TRAINS)
@@ -232,16 +241,14 @@ async def start(message, state):
 
     async with state.proxy() as data:
         try:
-            rzd_args = {
-                'bEntire': 'false',
-                'code0': data['departure'],
-                'code1': data['destination'],
-                'dir': '0',
-                'dt0': data['date'],
-                'tnum0': data['train'],
-            }
+            rzd_args = models.TrainDetailedRequestArgs(
+                data['departure'],
+                data['destination'],
+                data['date'],
+                data['train'],
+            )
             params = data['count']
-            car_type = data['car_type']
+            car_type = helpers.service_category_by_char_code(data['car_type'])
         except Exception:
             traceback.print_exc()
             return
@@ -251,7 +258,6 @@ async def start(message, state):
     mon = monitor.AsyncMonitor(
         args=rzd_args,
         cars_type=car_type,
-        delay_base=10,
         callback=send_message,
         prefix=prefix,
         **params,
@@ -259,19 +265,19 @@ async def start(message, state):
     bot.messengers[state.user] = mon
 
     msg = md.text(
-        md.code(f'{helpers.dump_to_json(rzd_args)}'),
+        md.code(f'{helpers.dump_to_json(rzd_args.as_rzd_args())}'),
         md.code(f'{helpers.dump_to_json(params)}'),
-        md.text(f'Count: {params["requested_count"]}, car type: {car_type}'),
+        md.text(f'Count: {params["requested_count"]}, car type: {car_type.char_code}'),
         sep='\n',
     )
-    logging.info(f'{prefix}{msg}')
+    logger.info(f'{prefix}{msg}')
     await send_message(msg, parse_mode=ParseMode.MARKDOWN)
     try:
         await mon.run()
         await send_message(
             messages.MONITOR_IS_SHUT_DOWN, parse_mode=ParseMode.MARKDOWN,
         )
-    except monitor.RZDNegativeResponse as e:
+    except common.RZDNegativeResponse as e:
         msg = messages.FAILED_TO_START_TEMPLATE.format(str(e))
         await send_message(msg)
 

@@ -1,0 +1,4 @@
+__WF/
+venv/
+logs/
+.env
