@@ -1,4 +1,4 @@
-import dataclasses
+import datetime
 import datetime
 import functools
 import itertools
@@ -14,13 +14,12 @@ from app import bot
 from app import forms
 from app import helpers
 from app import markups
-from app import suggests
 from app import monitor
+from app import suggests
 from app.configs import bot as config
 from app.configs import messages
 from rzd_client import common
 from rzd_client import models
-
 
 logger = logging.getLogger(__name__)
 
@@ -272,6 +271,7 @@ async def start(message, state):
     )
     logger.info(f'{prefix}{msg}')
     await send_message(msg, parse_mode=ParseMode.MARKDOWN)
+    await send_message_to_logs(f'{prefix}\n{msg}')
     try:
         await mon.run()
         await send_message(
@@ -284,7 +284,14 @@ async def start(message, state):
     await state.finish()
     bot.messengers.pop(state.user, None)
     await send_message(messages.CANCELLED, reply_markup=markups.DEFAULT_MARKUP)
+    await send_message_to_logs(f'{prefix}\n{messages.CANCELLED}')
 
 
 async def unexpected_text(message: types.Message):
     await message.reply(messages.UNEXPECTED_TEXT)
+
+
+async def send_message_to_logs(*args, **kwargs):
+    if not config.LOGS_CHANNEL:
+        return
+    await bot.bot.send_message(config.LOGS_CHANNEL, *args, **kwargs)
