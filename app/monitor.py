@@ -75,8 +75,14 @@ class AsyncMonitor:
 
     async def run(self):
         first_request = True
+        fails_count = 0
         async with client.RZDClient() as client_:
             while not self.stop:
+                if fails_count >= config.MAX_FAILS:
+                    msg = 'Exceeded max fails count. Stopping...'
+                    logger.warning(msg)
+                    await self.callback(msg)
+                    return
                 try:
                     train = await client_.fetch_train_detailed(args=self.args)
                     tickets = self._count_tickets_filtered(train)
@@ -90,9 +96,11 @@ class AsyncMonitor:
                             return
                         await asyncio.sleep(120 + self.delay_base * random.random())
                     first_request = False
+                    fails_count = 0
                 except common.RZDNegativeResponse:
                     raise
                 except Exception:
+                    fails_count += 1
                     logger.warning(traceback.format_exc())
                 finally:
                     await asyncio.sleep(5 + self.delay_base * random.random())
