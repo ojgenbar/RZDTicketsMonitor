@@ -1,0 +1,13 @@
+version: "3"
+services:
+  db:
+    image: "postgres:14.3-alpine3.16"
+    container_name: "rzd_collector_db"
+    env_file:
+      - db.env
+    ports:
+      - "16220:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/14/data
+volumes:
+  dbdata:

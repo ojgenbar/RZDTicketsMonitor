@@ -109,7 +109,7 @@ async def process_date(message: types.Message, state: dispatcher.FSMContext):
     async with state.proxy() as data:
         string = helpers.prepare_text_input(message.text)
         try:
-            date = helpers.parse_date(string)
+            date = helpers.parse_and_validate_date(string)
         except ValueError as exc:
             await message.reply(str(exc).capitalize())
             return

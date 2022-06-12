@@ -131,6 +131,9 @@ class TrainOverview:
 
     _raw_data: typing.Optional[dict] = None
 
+    def show_raw_data(self):
+        return self._raw_data
+
     @classmethod
     def from_rzd_json(cls, data):
         departure_station = Station(

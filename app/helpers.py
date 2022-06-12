@@ -36,7 +36,7 @@ def prepare_to_log(string):
     return string.replace('\n', '\\n')
 
 
-def parse_date(string):
+def parse_and_validate_date(string):
     string_date = string
     today = datetime.datetime.now().date()
     if len(string_date) == 5:
