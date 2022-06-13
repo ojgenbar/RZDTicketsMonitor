@@ -8,11 +8,11 @@ AVAILABLE_TRAINS_HEADER = 'Available trains:'
 CHOOSE_TRAIN_NUMBER_TEMPLATE = 'Choose train number (e.g. "{}").'
 
 AVAILABLE_TRAINS_TEMPLATE = (
-    '*{train.number}* {train.brand}\n'
-    '_{train.train_route}_\n'
-    '*{train.time_departure}* - *{train.time_arrival}* '
-    '({train.time_in_way} in way)\n'
-    'Allowed categories: {train.service_categories_string}'
+    '*{self.train.number}* {self.train.brand}\n'
+    '_{self.train_route_string}_\n'
+    '*{self.time_departure_string}* - *{self.time_arrival_string}* '
+    '({self.train.time_in_way_string} in way)\n'
+    'Available categories: {self.service_categories_string}'
 )
 
 QUESTION_DATE_TEMPLATE = 'What is the desired date? Follow this pattern: {}'
@@ -43,7 +43,6 @@ DATE_ERROR_TEMPLATE = (
 
 ANOTHER_MONITOR_IS_RUN = 'Another monitor is running. Cancel it first: /cancel'
 MONITOR_IS_SHUT_DOWN = 'Monitor is shut *down*.'
-CANNOT_FETCH_RESULT_FROM_RZD = 'Cannot fetch result from RZD site.'
 
 HELP_STRING = (
     'Hi!\n'

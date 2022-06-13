@@ -1,79 +1,32 @@
-import asyncio
-import collections
 import dataclasses
-import json
 import logging
 import typing
 
-import aiohttp
 from fuzzywuzzy import process
 
-from app import monitor
 from app.configs import messages
-from app.configs import rzd as config
+from app.configs import bot as config
+from rzd_client import client
+from rzd_client import common
+from rzd_client import models
 
 
 class StationSuggester:
-    def __init__(self, string):
+    def __init__(self, string, lang='ru'):
         self.string = string
+        self.lang = lang
         self.is_exact_match = None
         self.suggestions = None
         self.match_id = None
 
-    async def fetch_station_suggests(self, string):
-        if len(string) < 2:
-            message = (
-                f'String must contain at least 2 char. '
-                f'Got: {len(string)} for "{string}"'
-            )
-            raise ValueError(message)
-        string = string.strip()[:2].upper()
-        return await self._fetch_station_suggests_raw(string)
-
-    @staticmethod
-    async def _fetch_station_suggests_raw(string):
-        params = {'stationNamePart': string, 'lang': 'ru'}
-        async with aiohttp.ClientSession() as session:
-            response = await session.get(
-                config.SUGGESTS_BASE_URL, params=params,
-            )
-            logging.info(
-                f'Suggest request for: {string}, status={response.status}, '
-                f'url={response.url}',
-            )
-            data = await response.json()
-            assert response.status == 200
-            if not data:
-                return {}
-            suggests_dict = {}
-            for doc in data:
-                suggests_dict[doc['n']] = doc['c']
-            logging.info(
-                'Suggest data: {}'.format(
-                    json.dumps(suggests_dict, ensure_ascii=False),
-                ),
-            )
-            return suggests_dict
+    async def _fetch_suggests_dict(self) -> dict:
+        async with client.RZDClient() as client_:
+            suggests = await client_.fetch_station_suggests(lang=self.lang, string=self.string)
+            return suggests
 
     async def suggest_station(self):
         string = self.string.upper()
-        suggests_dict = None
-        for i in range(config.REQUEST_ATTEMPTS):
-            try:
-                suggests_dict = await self.fetch_station_suggests(string)
-                break
-            except aiohttp.ClientConnectionError:
-                sleep = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1)
-                logging.warning(
-                    f'Cannot fetch suggests. Current attempt is {i+1}. '
-                    f'Sleep: {sleep:.1f} sec.',
-                )
-                await asyncio.sleep(sleep)
-
-        if suggests_dict is None:
-            msg = 'Cannot fetch station suggests. Attempts limit is exceeded.'
-            logging.error(msg)
-            raise RuntimeError(msg)
+        suggests_dict = await self._fetch_suggests_dict()
 
         if not suggests_dict:
             self.suggestions = {}
@@ -97,16 +50,9 @@ class StationSuggester:
 
 
 @dataclasses.dataclass
-class Train:
-    brand: str
-    carrier: typing.Optional[str]
-    departure_station_code: int  # code0
-    destination_station_code: int  # code1
-    number: str
-    train_route: str
-    time_departure: str
-    time_arrival: str
-    time_in_way: str
+class TrainSuggest:
+    train: models.TrainOverview
+    train_route_string: str
     service_categories: typing.List[str]
 
     @property
@@ -116,49 +62,38 @@ class Train:
         else:
             return ''
 
+    @property
+    def time_departure_string(self):
+        return common.format_rzd_time(self.train.departure_datetime.time())
+
+    @property
+    def time_arrival_string(self):
+        return common.format_rzd_time(self.train.arrival_datetime.time())
+
     def to_message(self, template=messages.AVAILABLE_TRAINS_TEMPLATE):
-        return template.format(train=self)
+        return template.format(self=self)
 
     @classmethod
-    def from_rzd_dict(cls, data):
-        categories = {
-            cat['typeCarCharCode'] for cat in data['serviceCategories']
-        }
+    def from_overview_train(cls, train: models.TrainOverview):
         instance = cls(
-            brand=data['brand'],
-            carrier=data['carrier'],
-            departure_station_code=data['code0'],
-            destination_station_code=data['code1'],
-            number=data['number'],
-            train_route='{} --> {}'.format(data['route0'], data['route1']),
-            time_departure=data['time0'],
-            time_arrival=data['time1'],
-            time_in_way=data['timeInWay'],
-            service_categories=sorted(categories),
+            train=train,
+            train_route_string='{} --> {}'.format(
+                train.route.departure_station.name,
+                train.route.arrival_station.name
+            ),
+            service_categories=sorted(
+                cat.category.char_code for cat in train.service_categories
+            ),
         )
         return instance
 
 
-async def trains(departure, destination, date_str):
-    args = {
-        'dir': '0',
-        'tfl': '3',
-        'code0': departure,
-        'code1': destination,
-        'dt0': date_str,
-        'checkSeats': '0',
-        'withoutSeats': 'y',
-        'version': '2',
-        'actorType': 'desktop_2016',
-    }
+async def trains(args: models.TrainsOverviewRequestArgs):
+    async with client.RZDClient() as client_:
+        trains_list = await client_.fetch_trains_overview(args)
 
-    async with aiohttp.ClientSession() as session:
-        data = await monitor.rzd_rid_request(
-            session, config.SUGGEST_TRAINS_URL, args,
-        )
-
-    trains_dict = collections.OrderedDict()
-    for train_data in data['tp'][0]['list']:
-        train = Train.from_rzd_dict(train_data)
-        trains_dict[train.number] = train
-    return trains_dict
+    trains_suggests_dict = {}
+    for train in trains_list:
+        train_suggest = TrainSuggest.from_overview_train(train)
+        trains_suggests_dict[train_suggest.train.number] = train_suggest
+    return trains_suggests_dict

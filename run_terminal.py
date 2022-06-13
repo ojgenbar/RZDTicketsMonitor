@@ -2,6 +2,7 @@ import asyncio
 from pprint import pprint
 
 from app.monitor import AsyncMonitor
+from rzd_client import models
 
 
 def main():
@@ -45,16 +46,16 @@ def main():
 
     args = parser.parse_args()
 
-    rzd_args = {
-        'bEntire': 'false',
-        'code0': args.departure,
-        'code1': args.destination,
-        'dir': '0',
-        'dt0': args.date,
-        'tnum0': args.train,
-    }
+    rzd_args = models.TrainDetailedRequestArgs.from_rzd_args(
+        {
+            'code0': args.departure,
+            'code1': args.destination,
+            'dt0': args.date,
+            'tnum0': args.train,
+        }
+    )
 
-    pprint(rzd_args)
+    pprint(rzd_args.as_rzd_args())
 
     mon = AsyncMonitor(rzd_args, args.count, args.car_type)
     asyncio.run(mon.run())

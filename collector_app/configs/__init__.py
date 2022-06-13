@@ -2,7 +2,7 @@ import gzip
 import logging.handlers
 import os
 
-LOG_FILENAME = 'logs/log.log'
+LOG_FILENAME = 'logs/collector_log.log'
 os.makedirs(os.path.dirname(os.path.abspath(LOG_FILENAME)), exist_ok=True)
 
 

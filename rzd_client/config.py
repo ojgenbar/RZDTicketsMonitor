@@ -19,9 +19,25 @@ SUGGEST_TRAINS_URL = r'https://pass.rzd.ru/timetable/public/ru?layer_id=5827'
 
 # Dates
 DATE_FORMAT = '%d.%m.%Y'
+TIME_FORMAT = '%H:%M'
+DATETIME_PARSE_FORMAT = f'{DATE_FORMAT} {TIME_FORMAT}'
 DATES_INTERVAL = 121
 
 # Train
 STRING_RANGE_SEP = '-'
 STRING_LIST_SEP = ','
 LAST_COUPE_SEAT = 36
+
+CANNOT_FETCH_RESULT_FROM_RZD = 'Cannot fetch result from RZD site.'
+
+LOGGER_NAME = 'rzd_client'
+
+
+CHAR_CODE_BY_SERVICE_CATEGORY_MAPPER = {
+    1: 'Плац',
+    3: 'Сид',
+    4: 'Купе',
+    5: 'Мягкий',
+    6: 'Люкс',
+}
+UNKNOWN_STR = 'Unknown'
