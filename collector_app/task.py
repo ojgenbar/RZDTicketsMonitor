@@ -1,8 +1,10 @@
 import asyncio
 import dataclasses
+import datetime
 import logging
 import typing
 
+import pytz
 from sqlalchemy.orm import Session
 
 from collector_app import orm
@@ -27,6 +29,10 @@ class Task:
         self._stop = False
 
     def _check_can_process(self) -> bool:
+        today = today_msk()
+        if today > self._args.departure_date:
+            logger.info('ID: {self._id}. Departure date at past. Stop.')
+            return False
         return not self._stop
 
     async def callback(self, trains: typing.List[models.TrainOverview]):
@@ -79,3 +85,7 @@ def extract_statistics(trains: typing.List[models.TrainOverview], config):
         raw_data.append(train.show_raw_data())
     data_raw_obj = orm.CollectedDataRaw(raw_data=raw_data, config=config)
     return data_objs, data_raw_obj
+
+
+def today_msk():
+    return datetime.datetime.now(pytz.timezone('Europe/Moscow')).date()
