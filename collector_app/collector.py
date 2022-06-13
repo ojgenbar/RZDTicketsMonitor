@@ -1,13 +1,11 @@
 import asyncio
-import datetime
 import logging
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from collector_app import orm
-from collector_app import worker_queue
 from collector_app import task
+from collector_app import worker_queue
 from collector_app.configs import collector as config
 from rzd_client import models
 
@@ -50,11 +48,3 @@ class Collector:
         self._active_tasks = {}
         await asyncio.gather(self._sync_tasks_from_db(), self._start_worker_loop())
         logger.info('Stopped collector process.')
-
-
-def main():
-    asyncio.run(Collector().run())
-
-
-if __name__ == '__main__':
-    main()

@@ -5,10 +5,9 @@ import typing
 
 from sqlalchemy.orm import Session
 
-from rzd_client import models
-from collector_app import worker_queue
 from collector_app import orm
-
+from collector_app import worker_queue
+from rzd_client import models
 
 logger = logging.getLogger(__name__)
 

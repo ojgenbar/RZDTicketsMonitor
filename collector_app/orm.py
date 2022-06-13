@@ -1,18 +1,18 @@
 import logging
 import time
 
-from sqlalchemy import Column
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
 from sqlalchemy import Boolean
-from sqlalchemy import String
+from sqlalchemy import Column
 from sqlalchemy import Date
 from sqlalchemy import DateTime
-from  sqlalchemy.sql import functions
-from  sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import functions
 
 from collector_app.configs import database as config
 
