@@ -66,13 +66,15 @@ class CollectedDataRaw(Base):
         return f"CollectedDataRaw(id={self.id!r})"
 
 
-def create_all():
-    print('[WARNING] About to DROP and then create all tables...')
-    for i in range(5, 0, -1):
-        print(f'{i}...')
-        time.sleep(1)
+def create_all(force_recreate=False):
+    print('Start creating all...')
+    if force_recreate:
+        print('[WARNING] About to DROP and then create all tables...')
+        for i in range(5, 0, -1):
+            print(f'{i}...')
+            time.sleep(1)
 
-    Base.metadata.drop_all(engine)
+        Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     print('Done!')
 
