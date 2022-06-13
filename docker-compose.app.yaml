@@ -3,7 +3,9 @@ version: '3'
 services:
   bot:
     image: "rzd_monitor"
-    build: .
+    build:
+      context: .
+      dockerfile: ./Dockerfile.app
     env_file:
-      - .env
-    command: python3.9 run_bot.py
+      - app.env
+    command: python10 run_bot.py
