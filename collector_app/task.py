@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from collector_app import orm
 from collector_app import worker_queue
+from collector_app.configs import collector as config
 from rzd_client import models
 
 logger = logging.getLogger(__name__)
@@ -31,14 +32,21 @@ class Task:
     def _check_can_process(self) -> bool:
         today = today_msk()
         if today > self._args.departure_date:
-            logger.info('ID: {self._id}. Departure date at past. Stop.')
+            logger.info(f'ID: {self._id}. Departure date at past. Stop.')
             return False
         return not self._stop
+
+    def _calculate_delay(self) -> int:
+        days = (self._args.departure_date - today_msk()).days
+        days = max(days, 0)
+        delay = calculate_delay(days)
+        logger.info(f'ID: {self._id}. Delay: {delay} sec.')
+        return delay
 
     async def callback(self, trains: typing.List[models.TrainOverview]):
         logger.info(f'ID: {self._id}. Fetched {len(trains)} trains.')
         await self._write_statistics(trains)
-        await asyncio.sleep(10)
+        await asyncio.sleep(self._calculate_delay())
         await self.schedule_next()
 
     def stop(self):
@@ -89,3 +97,7 @@ def extract_statistics(trains: typing.List[models.TrainOverview], config):
 
 def today_msk():
     return datetime.datetime.now(pytz.timezone('Europe/Moscow')).date()
+
+
+def calculate_delay(d):
+    return min(config.MAX_DELAY_FOR_DATE, 10 + d**2)
