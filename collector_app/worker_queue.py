@@ -35,10 +35,13 @@ class WorkerQueue:
         try:
             trains = await self._client.fetch_trains_overview(args)
         except Exception:
-            logger.exception('Cannot fetch Trains. Stop for now.')
-            return
-        logger.info('Successfully fetched trains. Spent in queue: %s sec.', time.time() - start)
-        self._tasks_queue.put_nowait(asyncio.create_task(callback(trains)))
+            is_success = False
+            trains = []
+        else:
+            logger.info('Successfully fetched trains. Spent in queue: %.3f sec.', time.time() - start)
+            is_success = True
+
+        self._tasks_queue.put_nowait(asyncio.create_task(callback(is_success, trains)))
 
     async def _tasks_worker(self):
         while True:

@@ -43,7 +43,11 @@ class Task:
         logger.info(f'ID: {self._id}. Delay: {delay} sec.')
         return delay
 
-    async def callback(self, trains: typing.List[models.TrainOverview]):
+    async def callback(self, is_success: bool, trains: typing.List[models.TrainOverview]):
+        if not is_success:
+            logger.warning(f'ID: {self._id}. Cannot fetch trains. Schedule next.')
+            await self.schedule_next()
+            return
         logger.info(f'ID: {self._id}. Fetched {len(trains)} trains.')
         await self._write_statistics(trains)
         await asyncio.sleep(self._calculate_delay())
