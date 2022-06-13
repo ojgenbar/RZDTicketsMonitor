@@ -18,7 +18,7 @@ class Collector:
 
     async def _fetch_configs_from_db(self):
         with Session(orm.engine) as session:
-            all_configs = session.query(orm.Config).all()
+            all_configs = session.query(orm.Config).order_by(orm.Config.departure_date).all()
         for conf in all_configs:
             if not conf.enabled and conf.id in self._active_tasks:
                 self._active_tasks.pop(conf.id)[1].stop()
