@@ -97,8 +97,6 @@ class AsyncMonitor:
                         await asyncio.sleep(120 + self.delay_base * random.random())
                     first_request = False
                     fails_count = 0
-                except common.RZDNegativeResponse:
-                    raise
                 except Exception:
                     fails_count += 1
                     logger.warning(traceback.format_exc())

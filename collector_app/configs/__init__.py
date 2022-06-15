@@ -25,7 +25,7 @@ rh = logging.handlers.RotatingFileHandler(
 rh.rotator = rotator
 rh.namer = namer
 logging.basicConfig(
-    level=logging.INFO,
+    level=os.getenv('LOG_LEVEL', logging.INFO),
     format='%(asctime)s [%(levelname)-5.5s] [%(name)s] %(message)s',
     handlers=[rh, logging.StreamHandler()],
 )
