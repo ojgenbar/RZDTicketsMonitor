@@ -98,7 +98,10 @@ class AsyncMonitor:
                     first_request = False
                     fails_count = 0
                 except Exception:
-                    fails_count += 1
                     logger.warning(traceback.format_exc())
+                    delay = fails_count * config.SLEEP_AFTER_FAIL_BASE
+                    logger.info(f'Sleeping {delay} seconds...')
+                    await asyncio.sleep(delay)
+                    fails_count += 1
                 finally:
                     await asyncio.sleep(5 + self.delay_base * random.random())
