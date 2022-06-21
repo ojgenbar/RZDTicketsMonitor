@@ -55,29 +55,32 @@ async def rzd_post_search_request(session, url, args):
 
 async def rzd_rid_request(session, url, args):
     args_copy = args.copy()
+    rid_sleep = config.SLEEP_AFTER_RID_REQUEST
 
     for attempt in range(5):
         rid_data = await rzd_post_search_request(session, url, args_copy)
         if rid_data['result'] == 'OK':
             return rid_data
 
-        rid = str(rid_data['RID'])
-
-        args_copy['rid'] = rid
-
-        rid_sleep = config.SLEEP_AFTER_RID_REQUEST
         await asyncio.sleep(rid_sleep)
+
+        if 'RID' not in rid_data:
+            logger.warning(f'Unexpected result. Data: {repr(rid_data)}')
+
+        rid = str(rid_data['RID'])
+        args_copy['rid'] = rid
 
         for i in range(5):
             data = await rzd_post_search_request(session, url, args_copy)
             result = data['result']
             if result == 'RID':
-                logger.warning(f'Unexpected RID result. Data: {repr(data)}')
-                await asyncio.sleep(rid_sleep)
+                logger.info(f'Unexpected RID result. Data: {repr(data)}')
             elif result == 'OK':
                 return data
             elif result == 'FAIL':
+                logger.warning(f'FAIL result. Data: {repr(data)}')
                 break
+            await asyncio.sleep(rid_sleep)
 
         logger.warning(f'Attempt is not successful.')
         await asyncio.sleep(rid_sleep)
