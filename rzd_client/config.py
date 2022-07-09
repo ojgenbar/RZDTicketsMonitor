@@ -1,3 +1,5 @@
+import os
+
 # Monitor
 BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
 SLEEP_AFTER_RID_REQUEST = 1
@@ -8,6 +10,7 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
 }
+SOCKS5_PROXY_STRING = os.getenv('SOCKS5_PROXY_STRING')
 
 # Suggest station
 MIN_SUGGESTS_SIMILARITY = 70
