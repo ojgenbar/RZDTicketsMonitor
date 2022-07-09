@@ -4,6 +4,7 @@ import typing
 
 import aiohttp
 from aiohttp import hdrs
+import aiohttp_socks
 
 from . import config
 from . import common
@@ -17,8 +18,17 @@ class RZDClient:
     def __init__(self):
         self._session: typing.Optional[aiohttp.ClientSession] = None
 
+    @staticmethod
+    def _socks5_proxy_connector_or_none():
+        if not config.SOCKS5_PROXY_STRING:
+            return None
+        return aiohttp_socks.ProxyConnector.from_url(config.SOCKS5_PROXY_STRING)
+
     async def __aenter__(self):
-        self._session = aiohttp.ClientSession(headers=config.HEADERS)
+        self._session = aiohttp.ClientSession(
+            headers=config.HEADERS,
+            connector=self._socks5_proxy_connector_or_none()
+        )
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
