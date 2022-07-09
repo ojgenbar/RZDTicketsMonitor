@@ -7,7 +7,7 @@ services:
     env_file:
       - collector_db.env
     ports:
-      - "16220:5432"
+      - "${COLLECTOR_APP_DB_PORT:-16240}:5432"
     volumes:
       - dbdata:/var/lib/postgresql/14/data
     restart: always
