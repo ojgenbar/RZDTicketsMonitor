@@ -2,7 +2,7 @@ version: "3"
 
 services:
   db:
-    image: "postgres:14.3-alpine3.16"
+    image: "postgres:13.7-alpine"
     container_name: "rzd_collector_db"
     env_file:
       - collector_db.env
@@ -23,6 +23,5 @@ services:
     depends_on:
       - db
     network_mode: host
-    platform: linux/amd64
 volumes:
   dbdata:
