@@ -6,6 +6,7 @@ import typing
 
 import aiohttp
 from aiohttp import hdrs
+import python_socks
 
 from . import config
 
@@ -35,9 +36,9 @@ async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, **k
                     )
                 data = await response.json(content_type=None)
                 return data
-        except aiohttp.ClientConnectionError:
+        except (aiohttp.ClientConnectionError, python_socks.ProxyError):
             sleep = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1)
-            logging.warning(
+            logger.warning(
                 f'Cannot fetch data. Current attempt is {i + 1}. '
                 f'Sleep: {sleep:.1f} sec.',
             )
