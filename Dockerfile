@@ -4,4 +4,3 @@ WORKDIR /app
 COPY requirements.txt /app
 RUN pip install -r requirements.txt
 COPY . /app
-ENTRYPOINT python3.10 run_collector.py

@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  bot:
+    image: "rzd_tickets_monitor"
+    container_name: "rzd_monitor_bot"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - app.env
+    command: python3.10 run_bot.py
+    restart: always

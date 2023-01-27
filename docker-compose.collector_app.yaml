@@ -12,13 +12,14 @@ services:
       - dbdata:/var/lib/postgresql/14/data
     restart: always
   collector_app:
-    image: "rzd_collector_app"
+    image: "rzd_tickets_monitor"
+    container_name: "rzd_collector_app"
     build:
       context: .
-      dockerfile: ./Dockerfile.collector_app
+      dockerfile: ./Dockerfile
     env_file:
       - collector_app.env
-    command: python3.10 run_bot.py
+    command: python3.10 run_collector.py
     restart: always
     depends_on:
       - db
