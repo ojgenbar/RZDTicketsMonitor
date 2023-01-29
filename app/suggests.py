@@ -58,7 +58,7 @@ class TrainSuggest:
     @property
     def service_categories_string(self):
         if self.service_categories:
-            return '*{}*'.format('*, *'.join(self.service_categories))
+            return '*{}*'.format('*, *'.join(set(self.service_categories)))
         else:
             return ''
 

@@ -9,5 +9,5 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - app.env
-    command: python3.10 run_bot.py
+    command: python run_bot.py
     restart: always

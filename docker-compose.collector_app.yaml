@@ -9,7 +9,7 @@ services:
     ports:
       - "${COLLECTOR_APP_DB_PORT:-16240}:5432"
     volumes:
-      - dbdata:/var/lib/postgresql/14/data
+      - dbdata:/var/lib/postgresql/13/data
     restart: always
   collector_app:
     image: "rzd_tickets_monitor"
@@ -19,7 +19,7 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - collector_app.env
-    command: python3.10 run_collector.py
+    command: python run_collector.py
     restart: always
     depends_on:
       - db

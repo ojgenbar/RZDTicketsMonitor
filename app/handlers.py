@@ -1,5 +1,4 @@
 import datetime
-import datetime
 import functools
 import itertools
 import logging
@@ -38,25 +37,20 @@ async def cmd_status(message: types.Message, state: dispatcher.FSMContext):
             ).total_seconds()
             last_message = md.text(
                 f'Last attempt:',
-                md.bold(f'{seconds:.1f}'),
+                f'*{seconds:.1f}*',
                 f'seconds ago. {messenger.last_message}',
             )
         else:
             last_message = ''
         msg = md.text(
-            md.text('Status: RZD Monitor is', md.bold('active'), '.'),
-            md.text('Params:'),
-            md.code(f'{helpers.dump_to_json(messenger.args.as_rzd_args())}'),
+            'Status: RZD Monitor is *active*.',
+            'Params:',
+            f'`{helpers.dump_to_json(messenger.args.as_rzd_args())}`',
             last_message,
             sep='\n',
         )
     else:
-        msg = md.text(
-            md.text('Status: RZD Monitor is '),
-            md.bold('down'),
-            md.bold('.'),
-            sep='',
-        )
+        msg = 'Status: RZD Monitor is *down*.'
     await message.reply(
         msg,
         reply_markup=markups.DEFAULT_MARKUP,
@@ -264,9 +258,9 @@ async def start(message, state):
     bot.messengers[state.user] = mon
 
     msg = md.text(
-        md.code(f'{helpers.dump_to_json(rzd_args.as_rzd_args())}'),
-        md.code(f'{helpers.dump_to_json(params)}'),
-        md.text(f'Count: {params["requested_count"]}, car type: {car_type.char_code}'),
+        f'`{helpers.dump_to_json(rzd_args.as_rzd_args())}`',
+        f'`{helpers.dump_to_json(params)}`',
+        f'Count: {params["requested_count"]}, car type: {car_type.char_code}',
         sep='\n',
     )
     logger.info(f'{prefix}{msg}')
