@@ -28,7 +28,6 @@ class RZDClient:
         self._session = aiohttp.ClientSession(
             headers=config.HEADERS,
             connector=self._socks5_proxy_connector_or_none(),
-            version=aiohttp.http.HttpVersion10,
         )
         return self
 
