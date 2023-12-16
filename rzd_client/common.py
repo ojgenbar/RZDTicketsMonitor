@@ -47,7 +47,6 @@ async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, **k
                 f'Cannot fetch data ({repr(e)}). Current attempt is {i + 1}. '
                 f'Sleep: {sleep:.1f} sec.',
             )
-            traceback.print_exc()
             await asyncio.sleep(sleep)
     raise RZDAPIProblem(config.CANNOT_FETCH_RESULT_FROM_RZD)
 
