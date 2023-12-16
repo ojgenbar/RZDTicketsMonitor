@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import itertools
 import logging
+import traceback
 import typing
 
 import aiohttp
@@ -36,14 +37,14 @@ async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, **k
                     )
                 data = await response.json(content_type=None)
                 return data
-        except (aiohttp.ClientConnectionError, python_socks.ProxyError):
+        except (aiohttp.ClientConnectionError, python_socks.ProxyError) as e:
             max_delay = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (config.REQUEST_ATTEMPTS/2)
             sleep = min(
                 config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1),
                 max_delay,
             )
             logger.warning(
-                f'Cannot fetch data. Current attempt is {i + 1}. '
+                f'Cannot fetch data ({repr(e)}). Current attempt is {i + 1}. '
                 f'Sleep: {sleep:.1f} sec.',
             )
             await asyncio.sleep(sleep)
