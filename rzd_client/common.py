@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import itertools
 import logging
-import traceback
 import typing
 
 import aiohttp
