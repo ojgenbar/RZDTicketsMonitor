@@ -119,7 +119,7 @@ async def process_departure(
 ):
     async with state.proxy() as data:
         string = helpers.prepare_text_input(message.text)
-        suggester = suggests.StationSuggester(string)
+        suggester = suggests.StationSuggester(string, bot.rzd_client)
         await suggester.suggest_station()
         if not suggester.is_exact_match:
             msg = messages.CANNOT_FIND_EXACT_MATCH
@@ -153,7 +153,7 @@ async def process_destination(
 ):
     async with state.proxy() as data:
         string = helpers.prepare_text_input(message.text)
-        suggester = suggests.StationSuggester(string)
+        suggester = suggests.StationSuggester(string, bot.rzd_client)
         await suggester.suggest_station()
         if not suggester.is_exact_match:
             msg = messages.CANNOT_FIND_EXACT_MATCH
@@ -164,7 +164,8 @@ async def process_destination(
             trains = await suggests.trains(
                 models.TrainsOverviewRequestArgs(
                     data['departure'], data['destination'], data['date'],
-                )
+                ),
+                bot.rzd_client,
             )
             if not trains:
                 await bot.bot.send_message(state.user, messages.NO_TRAINS)
@@ -250,6 +251,7 @@ async def start(message, state):
 
     mon = monitor.AsyncMonitor(
         args=rzd_args,
+        rzd_client=bot.rzd_client,
         cars_type=car_type,
         callback=send_message,
         prefix=prefix,

@@ -3,11 +3,10 @@ import datetime
 import json
 import logging
 
-from app.configs import messages
 from app.configs import bot as bot_config
-
-from rzd_client import models
+from app.configs import messages
 from rzd_client import config as rzd_config
+from rzd_client import models
 
 logger = logging.getLogger(__name__)
 
