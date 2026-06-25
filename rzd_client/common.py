@@ -2,13 +2,10 @@ import asyncio
 import datetime
 import itertools
 import logging
-import sys
-import traceback
 import typing
 
 import aiohttp
 from aiohttp import hdrs
-from sqlalchemy import except_
 
 from . import config
 

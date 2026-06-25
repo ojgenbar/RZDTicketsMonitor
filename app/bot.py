@@ -1,9 +1,9 @@
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from .configs import bot as config
-from .configs import messages
-from . import routes
+from configs import bot as config
+from configs import messages
+import routes
 from rzd_client import client
 
 if not config.API_TOKEN:

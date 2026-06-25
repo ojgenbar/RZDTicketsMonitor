@@ -1,8 +1,6 @@
 import asyncio
 import logging
-import socket
 import time
-import uuid
 
 import aiohttp
 
@@ -13,23 +11,10 @@ logger = logging.getLogger(config.LOGGER_NAME)
 FETCH_COOLDOWN = 10
 
 
-def _get_local_ip() -> str:
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(('8.8.8.8', 80))
-            ip = s.getsockname()[0]
-    except Exception:
-        logger.warning('Failed to get local IP address, falling back to 127.0.0.1')
-        ip = '127.0.0.1'
-    logger.info('Local IP address: %s', ip)
-    return ip
-
-
 class ProxyManager:
     def __init__(self, api_url: str, device_id: str):
         self._api_url = api_url
         self._device_id = device_id
-        self._device_ip = _get_local_ip()
         self._proxies: list[tuple[str, str]] = []
         self._credentials: tuple[str, str] | None = None
         self._last_fetch: float = 0
@@ -73,8 +58,6 @@ class ProxyManager:
     async def _fetch(self):
         payload = {
             'deviceId': self._device_id,
-            # 'deviceIp': self._device_ip,
-            # 'publicRequestId': str(uuid.uuid4()),
         }
         logger.info(f'Fetching proxy list from {self._api_url}')
         try:
