@@ -26,34 +26,29 @@ async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, pro
         proxy_url = proxy_manager.proxy_url if proxy_manager else None
         if proxy_manager and not proxy_url:
             exception_str = 'No proxy'
-            logger.error(
-                f'No proxies available for RZD request'
-            )
-            continue
-        logger.info(f'RZD request, url: "{url}", method: {method}, proxy: {proxy_url}, req: {kwargs}')
-        try:
-            async with session.request(method, url=url, proxy=proxy_url, **kwargs) as response:
-                logger.info(
-                    f'Response status={response.status}, '
-                    f'url={response.url}',
-                )
-                if not (200 <= response.status <= 299):
-                    raise RZDNegativeResponse(
-                        f'Status: {response.status}, '
-                        f'text: {await response.text()}'
+            logger.error(f'No proxies available for RZD request')
+        else:
+            proxy_log = proxy_manager.proxy_endpoint if proxy_manager else None
+            logger.info(f'RZD request, url: "{url}", method: {method}, proxy: {proxy_log}, req: {kwargs}')
+            try:
+                async with session.request(method, url=url, proxy=proxy_url, **kwargs) as response:
+                    logger.info(
+                        f'Response status={response.status}, '
+                        f'url={response.url}',
                     )
-                data = await response.json(content_type=None)
-                return data
-        except aiohttp.ClientProxyConnectionError as e:
-            exception_str = repr(e)
-            if proxy_manager:
-                await proxy_manager.on_failure()
-        except aiohttp.ClientProxyConnectionError as e:
-            exception_str = repr(e)
-            if proxy_manager:
-                await proxy_manager.on_failure()
-        except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
-            exception_str = repr(e)
+                    if not (200 <= response.status <= 299):
+                        raise RZDNegativeResponse(
+                            f'Status: {response.status}, '
+                            f'text: {await response.text()}'
+                        )
+                    data = await response.json(content_type=None)
+                    return data
+            except aiohttp.ClientProxyConnectionError as e:
+                exception_str = repr(e)
+                if proxy_manager and proxy_log:
+                    await proxy_manager.on_failure(proxy_log)
+            except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
+                exception_str = repr(e)
 
         max_delay = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (config.REQUEST_ATTEMPTS / 2)
         sleep = min(
