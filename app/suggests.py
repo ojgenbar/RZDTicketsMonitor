@@ -12,17 +12,16 @@ from rzd_client import models
 
 
 class StationSuggester:
-    def __init__(self, string, lang='ru'):
+    def __init__(self, string, rzd_client: client.RZDClient, lang='ru'):
         self.string = string
         self.lang = lang
+        self.rzd_client = rzd_client
         self.is_exact_match = None
         self.suggestions = None
         self.match_id = None
 
     async def _fetch_suggests_dict(self) -> dict:
-        async with client.RZDClient() as client_:
-            suggests = await client_.fetch_station_suggests(lang=self.lang, string=self.string)
-            return suggests
+        return await self.rzd_client.fetch_station_suggests(lang=self.lang, string=self.string)
 
     async def suggest_station(self):
         string = self.string.upper()
@@ -88,9 +87,8 @@ class TrainSuggest:
         return instance
 
 
-async def trains(args: models.TrainsOverviewRequestArgs):
-    async with client.RZDClient() as client_:
-        trains_list = await client_.fetch_trains_overview(args)
+async def trains(args: models.TrainsOverviewRequestArgs, rzd_client: client.RZDClient):
+    trains_list = await rzd_client.fetch_trains_overview(args)
 
     trains_suggests_dict = {}
     for train in trains_list:

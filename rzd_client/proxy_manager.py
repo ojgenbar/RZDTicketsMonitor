@@ -34,6 +34,7 @@ class ProxyManager:
         self._credentials: tuple[str, str] | None = None
         self._last_fetch: float = 0
         self._session: aiohttp.ClientSession | None = None
+        self._lock = asyncio.Lock()
 
     async def __aenter__(self):
         timeout = aiohttp.ClientTimeout(connect=config.CONNECT_TIMEOUT, total=config.REQUEST_TIMEOUT)
@@ -55,12 +56,12 @@ class ProxyManager:
         return f'http://{host}:{port}'
 
     async def on_failure(self):
-        if self._proxies:
-            failed = self._proxies.pop(0)
-            logger.warning(f'Proxy {failed[0]}:{failed[1]} removed after failure. {len(self._proxies)} remaining.')
-        if not self._proxies:
-            await self._maybe_fetch()
-        return
+        async with self._lock:
+            if self._proxies:
+                failed = self._proxies.pop(0)
+                logger.warning(f'Proxy {failed[0]}:{failed[1]} removed after failure. {len(self._proxies)} remaining.')
+            if not self._proxies:
+                await self._maybe_fetch()
 
     async def _maybe_fetch(self):
         if time.monotonic() - self._last_fetch >= FETCH_COOLDOWN:
