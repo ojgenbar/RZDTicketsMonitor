@@ -22,7 +22,7 @@ PROXY_API_DEVICE_ID = os.getenv('PROXY_API_DEVICE_ID')
 # Suggest station
 MIN_SUGGESTS_SIMILARITY = 70
 SUGGESTS_LIMIT = 5
-SUGGESTS_BASE_URL = r'http://www.rzd.ru/suggester'
+SUGGESTS_BASE_URL = r'https://www.rzd.ru/suggester'
 
 # Suggest train
 SUGGEST_TRAINS_URL = r'https://pass.rzd.ru/timetable/public/ru?layer_id=5827'

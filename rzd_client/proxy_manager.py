@@ -9,6 +9,7 @@ from . import config
 logger = logging.getLogger(config.LOGGER_NAME)
 
 FETCH_COOLDOWN = 10
+FAILURE_THRESHOLD = 3
 
 
 class ProxyManager:
@@ -16,6 +17,7 @@ class ProxyManager:
         self._api_url = api_url
         self._device_id = device_id
         self._proxies: dict[str, None] = {}
+        self._failure_counts: dict[str, int] = {}
         self._credentials: tuple[str, str] | None = None
         self._last_fetch: float = 0
         self._session: aiohttp.ClientSession | None = None
@@ -50,14 +52,27 @@ class ProxyManager:
     def proxy_endpoint(self) -> str | None:
         return next(iter(self._proxies), None)
 
+    def on_success(self, endpoint: str):
+        self._failure_counts.pop(endpoint, None)
+
     async def on_failure(self, endpoint: str):
         async with self._lock:
-            if endpoint in self._proxies:
-                del self._proxies[endpoint]
-                logger.warning(f'Proxy {endpoint} removed after failure. {len(self._proxies)} remaining.')
-            else:
+            if endpoint not in self._proxies:
                 logger.info(f'Proxy {endpoint} already removed by another task.')
-            need_fetch = not self._proxies
+                need_fetch = not self._proxies
+            else:
+                count = self._failure_counts.get(endpoint, 0) + 1
+                self._failure_counts[endpoint] = count
+                if count >= FAILURE_THRESHOLD:
+                    del self._proxies[endpoint]
+                    self._failure_counts.pop(endpoint, None)
+                    logger.warning(
+                        f'Proxy {endpoint} removed after {FAILURE_THRESHOLD} consecutive failures. '
+                        f'{len(self._proxies)} remaining.'
+                    )
+                else:
+                    logger.warning(f'Proxy {endpoint} failure {count}/{FAILURE_THRESHOLD}.')
+                need_fetch = not self._proxies
         if need_fetch:
             await self._maybe_fetch()
 
