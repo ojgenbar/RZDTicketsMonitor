@@ -6,7 +6,7 @@ import random
 import traceback
 
 from app.configs import monitor as config
-from rzd_client import client
+from rzd_client import client as rzd_client_module
 from rzd_client.models import v2 as models
 from rzd_client import common
 
@@ -17,6 +17,7 @@ class AsyncMonitor:
     def __init__(
             self,
             args,
+            rzd_client: rzd_client_module.RZDClient,
             requested_count,
             cars_type,
             mask=None,
@@ -28,6 +29,7 @@ class AsyncMonitor:
             prefix='',
     ):
         self.args = args
+        self.rzd_client = rzd_client
         self.requested_count = requested_count
         self.cars_type = cars_type
         self.mask = mask
@@ -76,32 +78,31 @@ class AsyncMonitor:
     async def run(self):
         first_request = True
         fails_count = 0
-        async with client.RZDClient() as client_:
-            while not self.stop:
-                if fails_count >= config.MAX_FAILS:
-                    msg = 'Exceeded max fails count. Stopping...'
-                    logger.warning(msg)
+        while not self.stop:
+            if fails_count >= config.MAX_FAILS:
+                msg = 'Exceeded max fails count. Stopping...'
+                logger.warning(msg)
+                await self.callback(msg)
+                return
+            try:
+                train = await self.rzd_client.fetch_train_detailed(args=self.args)
+                tickets = self._count_tickets_filtered(train)
+                msg = f'Total: {tickets} tickets'
+                self.last_message = msg
+                self.last_time = datetime.datetime.now()
+                logger.info(f'{self.log_prefix}{msg}')
+                if tickets >= self.requested_count:
                     await self.callback(msg)
-                    return
-                try:
-                    train = await client_.fetch_train_detailed(args=self.args)
-                    tickets = self._count_tickets_filtered(train)
-                    msg = f'Total: {tickets} tickets'
-                    self.last_message = msg
-                    self.last_time = datetime.datetime.now()
-                    logger.info(f'{self.log_prefix}{msg}')
-                    if tickets >= self.requested_count:
-                        await self.callback(msg)
-                        if first_request:
-                            return
-                        await asyncio.sleep(120 + self.delay_base * random.random())
-                    first_request = False
-                    fails_count = 0
-                except Exception:
-                    logger.warning(traceback.format_exc())
-                    delay = fails_count * config.SLEEP_AFTER_FAIL_BASE
-                    logger.info(f'Sleeping {delay} seconds...')
-                    await asyncio.sleep(delay)
-                    fails_count += 1
-                finally:
-                    await asyncio.sleep(5 + self.delay_base * random.random())
+                    if first_request:
+                        return
+                    await asyncio.sleep(120 + self.delay_base * random.random())
+                first_request = False
+                fails_count = 0
+            except Exception:
+                logger.warning(traceback.format_exc())
+                delay = fails_count * config.SLEEP_AFTER_FAIL_BASE
+                logger.info(f'Sleeping {delay} seconds...')
+                await asyncio.sleep(delay)
+                fails_count += 1
+            finally:
+                await asyncio.sleep(5 + self.delay_base * random.random())

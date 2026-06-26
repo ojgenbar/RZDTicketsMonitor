@@ -6,7 +6,6 @@ import typing
 
 import aiohttp
 from aiohttp import hdrs
-import python_socks
 
 from . import config
 
@@ -21,49 +20,64 @@ class RZDNegativeResponse(RuntimeError):
     pass
 
 
-async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, **kwargs: typing.Dict):
+async def rzd_request(session: aiohttp.ClientSession, method: str, url: str, proxy_manager=None, **kwargs: typing.Dict):
+    exception_str = 'Empty'
     for i in range(config.REQUEST_ATTEMPTS):
-        try:
-            async with session.request(method, url=url, **kwargs) as response:
-                logger.info(
-                    f'Response status={response.status}, '
-                    f'url={response.url}',
-                )
-                if not (200 <= response.status <= 299):
-                    raise RZDNegativeResponse(
-                        f'Status: {response.status}, '
-                        f'text: {await response.text()}'
+        proxy_url = proxy_manager.proxy_url if proxy_manager else None
+        if proxy_manager and not proxy_url:
+            exception_str = 'No proxy'
+            logger.error(f'No proxies available for RZD request')
+        else:
+            proxy_log = proxy_manager.proxy_endpoint if proxy_manager else None
+            logger.info(f'RZD request, url: "{url}", method: {method}, proxy: {proxy_log}, req: {kwargs}')
+            try:
+                async with session.request(method, url=url, proxy=proxy_url, **kwargs) as response:
+                    logger.info(
+                        f'Response status={response.status}, '
+                        f'url={response.url}',
                     )
-                data = await response.json(content_type=None)
-                return data
-        except (aiohttp.ClientConnectionError, python_socks.ProxyError) as e:
-            max_delay = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (config.REQUEST_ATTEMPTS/2)
-            sleep = min(
-                config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1),
-                max_delay,
-            )
-            logger.warning(
-                f'Cannot fetch data ({repr(e)}). Current attempt is {i + 1}. '
-                f'Sleep: {sleep:.1f} sec.',
-            )
-            await asyncio.sleep(sleep)
+                    if not (200 <= response.status <= 299):
+                        raise RZDNegativeResponse(
+                            f'Status: {response.status}, '
+                            f'text: {await response.text()}'
+                        )
+                    data = await response.json(content_type=None)
+                    return data
+            except aiohttp.ClientProxyConnectionError as e:
+                exception_str = repr(e)
+                if proxy_manager and proxy_log:
+                    await proxy_manager.on_failure(proxy_log)
+            except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
+                exception_str = repr(e)
+
+        max_delay = config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (config.REQUEST_ATTEMPTS / 2)
+        sleep = min(
+            config.SLEEP_AFTER_UNSUCCESSFUL_REQUEST * (i + 1),
+            max_delay,
+        )
+        logger.warning(
+            f'Cannot fetch data ({exception_str}). Current attempt is {i + 1}. '
+            f'Sleep: {sleep:.1f} sec.',
+        )
+        await asyncio.sleep(sleep)
     raise RZDAPIProblem(config.CANNOT_FETCH_RESULT_FROM_RZD)
 
 
-async def rzd_post_search_request(session, url, args):
+async def rzd_post_search_request(session, url, args, proxy_manager=None):
     log_extra = {'args_': args, 'url': url}
     logger.info('request: {!r}'.format(log_extra))
-    result_json = await rzd_request(session, hdrs.METH_POST, url, data=args)
+    result_json = await rzd_request(session, hdrs.METH_POST, url, proxy_manager=proxy_manager, data=args)
     logger.debug('Data: %s', result_json)
     return result_json
 
 
-async def rzd_rid_request(session, url, args):
+async def rzd_rid_request(session, url, args, proxy_manager=None):
     args_copy = args.copy()
     rid_sleep = config.SLEEP_AFTER_RID_REQUEST
 
     for attempt in range(5):
-        rid_data = await rzd_post_search_request(session, url, args_copy)
+        logger.info(f'RZD RID request, url: "{url}", req: {args_copy}')
+        rid_data = await rzd_post_search_request(session, url, args_copy, proxy_manager=proxy_manager)
         if rid_data['result'] == 'OK':
             return rid_data
 
@@ -76,7 +90,7 @@ async def rzd_rid_request(session, url, args):
         args_copy['rid'] = rid
 
         for i in range(5):
-            data = await rzd_post_search_request(session, url, args_copy)
+            data = await rzd_post_search_request(session, url, args_copy, proxy_manager=proxy_manager)
             result = data['result']
             if result == 'RID':
                 logger.info(f'Unexpected RID result. Data: {repr(data)}')

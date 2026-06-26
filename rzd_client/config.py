@@ -5,12 +5,19 @@ BASE_URL = r'https://ticket.rzd.ru/apib2b/p/Railway/V1/Search/CarPricing'
 SLEEP_AFTER_RID_REQUEST = 1
 SLEEP_AFTER_UNSUCCESSFUL_REQUEST = 1
 REQUEST_ATTEMPTS = 10
+CONNECT_TIMEOUT = 10
+REQUEST_TIMEOUT = 30
 BASIC_DELAY_BASE = 20
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
     # 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
 }
-SOCKS5_PROXY_STRING = os.getenv('SOCKS5_PROXY_STRING')
+HEADERS_PROXY = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
+    'Origin': 'rzd-tg-bot://tg_contact_oj_gen',
+}
+PROXY_API_URL = os.getenv('PROXY_API_URL')
+PROXY_API_DEVICE_ID = os.getenv('PROXY_API_DEVICE_ID')
 
 # Suggest station
 MIN_SUGGESTS_SIMILARITY = 70
