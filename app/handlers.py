@@ -18,7 +18,8 @@ from app import suggests
 from app.configs import bot as config
 from app.configs import messages
 from rzd_client import common
-from rzd_client import models
+from rzd_client.models import v1 as models_v1
+from rzd_client.models import v2 as models_v2
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ async def process_departure(
             msg = messages.CANNOT_FIND_EXACT_MATCH
             markup = markups.build_from_list(suggester.suggestions.keys())
         else:
-            data['departure'] = models.Station(suggester.match_id)
+            data['departure'] = models_v1.Station(suggester.match_id)
             await forms.MonitorParameters.next()
             msg = messages.QUESTION_DESTINATION_STATION
             markup = markups.DIRECTIONS_MARKUP
@@ -160,9 +161,9 @@ async def process_destination(
             markup = markups.build_from_list(suggester.suggestions.keys())
         else:
             await bot.bot.send_message(state.user, messages.WAIT_TRAINS_SEARCH)
-            data['destination'] = models.Station(suggester.match_id)
+            data['destination'] = models_v1.Station(suggester.match_id)
             trains = await suggests.trains(
-                models.TrainsOverviewRequestArgs(
+                models_v1.TrainsOverviewRequestArgs(
                     data['departure'], data['destination'], data['date'],
                 ),
                 bot.rzd_client,
@@ -235,7 +236,7 @@ async def start(message, state):
 
     async with state.proxy() as data:
         try:
-            rzd_args = models.TrainDetailedRequestArgs(
+            rzd_args = models_v2.TrainDetailedRequestArgs(
                 data['departure'],
                 data['destination'],
                 data['date'],
@@ -262,7 +263,7 @@ async def start(message, state):
     msg = md.text(
         f'`{helpers.dump_to_json(rzd_args.as_rzd_args())}`',
         f'`{helpers.dump_to_json(params)}`',
-        f'Count: {params["requested_count"]}, car type: {car_type.char_code}',
+        f'Count: {params["requested_count"]}, car type: {car_type.name}',
         sep='\n',
     )
     logger.info(f'{prefix}{msg}')
@@ -284,7 +285,7 @@ async def start(message, state):
 
 
 async def unexpected_text(message: types.Message):
-    await message.reply(messages.UNEXPECTED_TEXT)
+    await message.reply(messages.UNEXPECTED_TEXT, reply_markup=markups.DEFAULT_MARKUP)
 
 
 async def send_message_to_logs(*args, **kwargs):

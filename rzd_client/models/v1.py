@@ -3,8 +3,8 @@ import datetime
 import decimal
 import typing
 
-from . import config
-from . import common
+from .. import config
+from .. import common
 
 
 @dataclasses.dataclass
@@ -201,35 +201,6 @@ class TrainDetailed:
             time_in_way_string=data.get('timeInWay'),
             cars=cars,
             _raw_data=data
-        )
-        return instance
-
-
-@dataclasses.dataclass
-class TrainDetailedRequestArgs:
-    departure_station: Station
-    arrival_station: Station
-    departure_date: datetime.date
-    train_number: str
-
-    def as_rzd_args(self):
-        args = {
-            'bEntire': 'false',
-            'code0': self.departure_station.code,
-            'code1': self.arrival_station.code,
-            'dir': '0',
-            'dt0': common.format_rzd_date(self.departure_date),
-            'tnum0': self.train_number,
-        }
-        return args
-
-    @classmethod
-    def from_rzd_args(cls, args: dict):
-        instance = cls(
-            departure_station=Station(code=args['code0']),
-            arrival_station=Station(code=args['code1']),
-            departure_date=common.parse_rzd_date(args['dt0']),
-            train_number=args.get('tnum0'),
         )
         return instance
 

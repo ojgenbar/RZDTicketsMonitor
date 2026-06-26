@@ -7,7 +7,7 @@ import traceback
 
 from app.configs import monitor as config
 from rzd_client import client as rzd_client_module
-from rzd_client import models
+from rzd_client.models import v2 as models
 from rzd_client import common
 
 logger = logging.getLogger(__name__)
@@ -18,8 +18,8 @@ class AsyncMonitor:
             self,
             args,
             rzd_client: rzd_client_module.RZDClient,
-            requested_count=1,
-            cars_type=models.ServiceCategory(1),
+            requested_count,
+            cars_type,
             mask=None,
             same_coupe=False,
             coupe_size=4,
@@ -71,7 +71,7 @@ class AsyncMonitor:
         total = sum(
             self._get_seats_count_in_car(car)
             for car in train.cars
-            if car.category.code == self.cars_type.code
+            if car.car_type.code == self.cars_type.code
         )
         return total
 

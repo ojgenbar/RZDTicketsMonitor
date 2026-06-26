@@ -7,7 +7,8 @@ from aiohttp import hdrs
 
 from . import config
 from . import common
-from . import models
+from .models import v1 as models_v1
+from .models import v2 as models_v2
 from .proxy_manager import ProxyManager
 
 
@@ -68,17 +69,18 @@ class RZDClient:
         )
         return suggests_dict
 
-    async def fetch_train_detailed(self, args: models.TrainDetailedRequestArgs) -> models.TrainOverview:
-        data = await common.rzd_rid_request(
+    async def fetch_train_detailed(self, args: models_v2.TrainDetailedRequestArgs) -> models_v1.TrainOverview:
+        data = await common.rzd_request(
             session=self._session,
+            method=hdrs.METH_POST,
             url=config.BASE_URL,
-            args=args.as_rzd_args(),
+            json=args.as_rzd_args(),
             proxy_manager=self._proxy_manager,
         )
-        train = models.TrainDetailed.from_rzd_json(data['lst'][0])
+        train = models_v2.TrainDetailed.from_rzd_data(data)
         return train
 
-    async def fetch_trains_overview(self, args: models.TrainsOverviewRequestArgs) -> typing.List[models.TrainOverview]:
+    async def fetch_trains_overview(self, args: models_v1.TrainsOverviewRequestArgs) -> typing.List[models_v1.TrainOverview]:
         data = await common.rzd_rid_request(
             session=self._session,
             url=config.SUGGEST_TRAINS_URL,
@@ -87,7 +89,7 @@ class RZDClient:
         )
 
         trains = [
-            models.TrainOverview.from_rzd_json(raw)
+            models_v1.TrainOverview.from_rzd_json(raw)
             for raw in data['tp'][0]['list']
         ]
         return trains

@@ -6,7 +6,7 @@ import logging
 from app.configs import bot as bot_config
 from app.configs import messages
 from rzd_client import config as rzd_config
-from rzd_client import models
+from rzd_client.models import v2 as models_v2
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,8 @@ def _parse_arguments(string=None):
 
 
 def service_category_by_char_code(char_code: str):
-    source = char_code
-    for code, char_code in rzd_config.CHAR_CODE_BY_SERVICE_CATEGORY_MAPPER.items():
-        if source == char_code:
-            return models.ServiceCategory(code)
-    raise ValueError(f"Cannot find ServiceCategory with char_code: {char_code}")
+    source = char_code.upper()
+    category = models_v2.CAR_TYPE_BY_NAME.get(source)
+    if not category:
+        raise ValueError(f"Cannot find ServiceCategory with char_code: {char_code}")
+    return category

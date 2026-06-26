@@ -8,7 +8,8 @@ from app.configs import messages
 from app.configs import bot as config
 from rzd_client import client
 from rzd_client import common
-from rzd_client import models
+from rzd_client.models import v1 as models_v1
+from rzd_client.models import v2 as models_v2
 
 
 class StationSuggester:
@@ -50,7 +51,7 @@ class StationSuggester:
 
 @dataclasses.dataclass
 class TrainSuggest:
-    train: models.TrainOverview
+    train: models_v1.TrainOverview
     train_route_string: str
     service_categories: typing.List[str]
 
@@ -73,7 +74,7 @@ class TrainSuggest:
         return template.format(self=self)
 
     @classmethod
-    def from_overview_train(cls, train: models.TrainOverview):
+    def from_overview_train(cls, train: models_v1.TrainOverview):
         instance = cls(
             train=train,
             train_route_string='{} --> {}'.format(
@@ -87,7 +88,7 @@ class TrainSuggest:
         return instance
 
 
-async def trains(args: models.TrainsOverviewRequestArgs, rzd_client: client.RZDClient):
+async def trains(args: models_v1.TrainsOverviewRequestArgs, rzd_client: client.RZDClient):
     trains_list = await rzd_client.fetch_trains_overview(args)
 
     trains_suggests_dict = {}

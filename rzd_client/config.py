@@ -1,7 +1,7 @@
 import os
 
 # Monitor
-BASE_URL = r'https://pass.rzd.ru/timetable/public/en?layer_id=5764'
+BASE_URL = r'https://ticket.rzd.ru/apib2b/p/Railway/V1/Search/CarPricing'
 SLEEP_AFTER_RID_REQUEST = 1
 SLEEP_AFTER_UNSUCCESSFUL_REQUEST = 1
 REQUEST_ATTEMPTS = 10
@@ -10,7 +10,7 @@ REQUEST_TIMEOUT = 30
 BASIC_DELAY_BASE = 20
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    # 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
 }
 HEADERS_PROXY = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
@@ -51,3 +51,12 @@ CHAR_CODE_BY_SERVICE_CATEGORY_MAPPER = {
     6: 'Люкс',
 }
 UNKNOWN_STR = 'Unknown'
+
+CAR_TYPE_CODE_BY_NAME = {
+    'СИД': 'Sedentary',
+    'ПЛАЦ': 'ReservedSeat',
+    'КУПЕ': 'Compartment',
+    'СВ': 'Luxury',
+    'ЛЮКС': 'Soft',
+    'БАГАЖ': 'Baggage',
+}
